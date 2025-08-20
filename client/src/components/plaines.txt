@@ -1,0 +1,107 @@
+mail-frontend/
+├── app/ or pages/                   # Next.js entry points (depending on routing style)
+│   ├── inbox/
+│   │   └── page.js                 # Inbox page
+│   ├── compose/
+│   │   └── page.js                 # Compose email
+│   ├── templates/
+│   │   └── page.js
+│   ├── accounts/
+│   │   └── page.js
+│   ├── followups/
+│   │   └── page.js
+│   ├── analytics/
+│   │   └── page.js
+│   └── login.js                   # Auth entry point
+│
+├── components/
+│   ├── common/                    # Shared/general-purpose UI wrappers
+│   │   ├── Button.js
+│   │   ├── Input.js
+│   │   ├── Textarea.js
+│   │   ├── Modal.js
+│   │   ├── SidebarLayout.js       # Layout with AppSidebar + content
+│   │   ├── Header.js
+│   │   ├── Footer.js
+│   │   ├── Avatar.js
+│   │   ├── Dropdown.js
+│   │   ├── Badge.js
+│   │   ├── Tabs.js
+│   │   ├── Spinner.js
+│   │   ├── ToastProvider.js       # wrapper around shadcn/toast
+│   │   └── FilterChip.js
+│   │
+│   ├── email/                     # Email-specific UI
+│   │   ├── InboxLayout.js         # Filter bar + list + thread view container
+│   │   ├── FilterBar.js
+│   │   ├── EmailList.js
+│   │   ├── EmailRow.js
+│   │   ├── ThreadView.js
+│   │   ├── ComposeEditor.js       # Rich/HTML + text + placeholders
+│   │   ├── TemplatePreview.js
+│   │   ├── FollowUpPanel.js
+│   │   └── AccountsPicker.js
+│   │
+│   ├── templates/                # Template management
+│   │   ├── TemplateList.js
+│   │   ├── TemplateCard.js
+│   │   └── TemplateEditor.js
+│   │
+│   ├── accounts/
+│   │   ├── AccountList.js
+│   │   ├── AccountRow.js
+│   │   └── AccountDetails.js
+│   │
+│   ├── auth/
+│   │   ├── AuthButton.js
+│   │   ├── UserMenu.js
+│   │   └── ProtectedRoute.js
+│   │
+│   ├── analytics/
+│   │   ├── DashboardSummary.js
+│   │   └── ChartCard.js
+│   │
+│   ├── layout/
+│   │   ├── AppSidebar.js          # the sidebar (you already have)
+│   │   ├── MainLayout.js          # combines sidebar/header/footer
+│   │   └── ResponsiveNav.js
+│   │
+│   └── ui/                       # thin adapters / re-exports of shadcn components + theme hooks
+│       ├── button.js
+│       ├── input.js
+│       ├── dialog.js
+│       ├── toast.js
+│       └── index.js
+│
+├── contexts/
+│   ├── AuthContext.js
+│   ├── InboxFilterContext.js
+│   └── TemplateContext.js
+│
+├── hooks/
+│   ├── useAuth.js
+│   ├── useFetch.js
+│   ├── useDebounce.js
+│   ├── useInboxFilters.js
+│   ├── useTemplates.js
+│   └── useAccounts.js
+│
+├── lib/
+│   └── api.js                   # axios or fetch wrapper
+│
+├── utils/
+│   ├── renderTemplate.js        # Handlebars wrapper
+│   ├── date.js                 # formatting helpers
+│   └── shortcuts.js            # keyboard shortcuts registry
+│
+├── styles/
+│   └── globals.css             # Tailwind + overrides
+│
+├── public/
+│   └── avatars/...
+│
+├── .env.local
+├── next.config.js
+├── tailwind.config.js
+├── package.json
+└── README.md
