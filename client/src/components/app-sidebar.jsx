@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   AudioWaveform,
   BookOpen,
@@ -20,19 +20,19 @@ import {
   SquareTerminal,
   User,
   Users,
-} from "lucide-react"
+} from "lucide-react";
 
-import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { NavMain } from "@/components/nav-main";
+import { NavProjects } from "@/components/nav-projects";
+import { NavUser } from "@/components/nav-user";
+import { TeamSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
 const data = {
   user: {
@@ -61,9 +61,9 @@ const data = {
       items: [],
     },
     {
-      title: "Compose",
-      url: "/compose",
-      icon: Edit2,
+      title: "Follow-Ups",
+      url: "/followups",
+      icon: Clock,
       items: [],
     },
     {
@@ -72,6 +72,13 @@ const data = {
       icon: FileText,
       items: [],
     },
+    {
+      title: "Contacts",
+      url: "/contacts",
+      icon: Edit2,
+      items: [],
+    },
+
     {
       title: "Sent",
       url: "/sent",
@@ -84,12 +91,7 @@ const data = {
       icon: Mail,
       items: [],
     },
-    {
-      title: "Follow-Ups",
-      url: "/followups",
-      icon: Clock,
-      items: [],
-    },
+
     {
       title: "Accounts",
       url: "/accounts",
@@ -115,20 +117,16 @@ const data = {
       items: [],
     },
   ],
+};
 
-}
-
-export function AppSidebar({
-  ...props
-}) {
+export function AppSidebar({ ...props }) {
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible='icon' {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />
