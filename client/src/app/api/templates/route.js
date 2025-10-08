@@ -13,9 +13,8 @@ let TEMPLATES = [
     name: "Full Stack Role",
     subject: "Application for Full Stack Engineer",
     body: "<p>Dear [Hiring_Manager],<br/>I am applying for the [role] position at [company]...</p>",
-    mode: "html", // html | markdown | text
+    mode: "html",
     attachments: [
-      // attachments saved only as metadata in dummy API
       { id: "a1", name: "resume.pdf", size: 128000, type: "application/pdf" },
     ],
     createdAt: new Date().toISOString(),
@@ -25,14 +24,117 @@ let TEMPLATES = [
     id: "t2",
     name: "Data Analyst Role",
     subject: "Application for Data Analyst",
-    body: "Hello [Hiring_Manager],\n\nI am writing to apply for the [role] position ...\n",
+    body: "Hello [Hiring_Manager],\n\nI am writing to apply for the [role] position at [company]...",
+    mode: "text",
+    attachments: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "t3",
+    name: "Follow-Up Interview",
+    subject: "Follow-Up Regarding Interview",
+    body: "<p>Dear [Hiring_Manager],<br/>I wanted to follow up regarding my interview for the [role] position at [company]...</p>",
+    mode: "html",
+    attachments: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "t4",
+    name: "Meeting Request",
+    subject: "Request to Schedule Meeting",
+    body: "Hi [Recipient],\n\nI would like to schedule a meeting to discuss [topic]. Please let me know your availability.",
+    mode: "text",
+    attachments: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "t5",
+    name: "Business Proposal",
+    subject: "Proposal for Business Collaboration",
+    body: "<p>Hello [Recipient],<br/>We would like to propose a business collaboration between [company] and [recipientCompany]. Please find the proposal attached.</p>",
+    mode: "html",
+    attachments: [
+      { id: "a2", name: "proposal.pdf", size: 150000, type: "application/pdf" },
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "t6",
+    name: "Product Inquiry",
+    subject: "Inquiry about Product Features",
+    body: "Dear [Support_Team],\n\nI am interested in [product] and would like to know more about its features and pricing.",
+    mode: "text",
+    attachments: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "t7",
+    name: "Thank You Note",
+    subject: "Thank You for Your Time",
+    body: "<p>Hi [Recipient],<br/>Thank you for taking the time to speak with me about [topic]. I really appreciate it.</p>",
+    mode: "html",
+    attachments: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "t8",
+    name: "Job Offer Response",
+    subject: "Response to Job Offer",
+    body: "Dear [Hiring_Manager],\n\nThank you for offering me the [role] position. I am delighted to accept and look forward to joining [company].",
+    mode: "text",
+    attachments: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "t9",
+    name: "Invoice Reminder",
+    subject: "Reminder: Pending Invoice",
+    body: "<p>Dear [Client],<br/>This is a friendly reminder regarding invoice #[invoiceNumber] which is pending. Kindly process the payment at your earliest convenience.</p>",
+    mode: "html",
+    attachments: [
+      { id: "a3", name: "invoice.pdf", size: 110000, type: "application/pdf" },
+    ],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "t10",
+    name: "Technical Support Request",
+    subject: "Assistance Required for Technical Issue",
+    body: "Hi [Support_Team],\n\nI am facing an issue with [product/service]. Please assist me in resolving it.",
+    mode: "text",
+    attachments: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "t11",
+    name: "Networking Request",
+    subject: "Let's Connect",
+    body: "<p>Hi [Recipient],<br/>I would like to connect with you to discuss potential networking opportunities.</p>",
+    mode: "html",
+    attachments: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "t12",
+    name: "Event Invitation",
+    subject: "Invitation to [Event_Name]",
+    body: "Dear [Recipient],\n\nYou are cordially invited to attend [Event_Name] hosted by [company]. Please RSVP by [date].",
     mode: "text",
     attachments: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
 ];
-
 // small helpers
 const bad = (message, status = 400) =>
   NextResponse.json({ ok: false, message }, { status });
@@ -44,9 +146,15 @@ const createSchema = z.object({
   subject: z.string().optional(),
   content: z.string().min(10, "Template body must be at least 10 characters"),
   mode: z.enum(["html", "markdown", "text"]).optional().default("html"),
-  attachments: z.array(
-    z.object({ name: z.string(), size: z.number().optional(), type: z.string().optional() })
-  ).optional(),
+  attachments: z
+    .array(
+      z.object({
+        name: z.string(),
+        size: z.number().optional(),
+        type: z.string().optional(),
+      })
+    )
+    .optional(),
 });
 
 const updateSchema = z.object({
@@ -54,14 +162,22 @@ const updateSchema = z.object({
   subject: z.string().optional(),
   content: z.string().min(10).optional(),
   mode: z.enum(["html", "markdown", "text"]).optional(),
-  attachments: z.array(
-    z.object({ name: z.string(), size: z.number().optional(), type: z.string().optional() })
-  ).optional(),
+  attachments: z
+    .array(
+      z.object({
+        name: z.string(),
+        size: z.number().optional(),
+        type: z.string().optional(),
+      })
+    )
+    .optional(),
 });
 
 export async function GET() {
   // return sorted by updatedAt desc
-  const list = [...TEMPLATES].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  const list = [...TEMPLATES].sort(
+    (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+  );
   return ok(list);
 }
 
@@ -74,7 +190,8 @@ export async function POST(req) {
   }
 
   const parse = createSchema.safeParse(body);
-  if (!parse.success) return bad(parse.error.errors.map((e) => e.message).join(", "));
+  if (!parse.success)
+    return bad(parse.error.errors.map((e) => e.message).join(", "));
 
   const now = new Date().toISOString();
   const item = {
@@ -104,7 +221,8 @@ export async function PUT(req) {
   }
 
   const parse = updateSchema.safeParse(body);
-  if (!parse.success) return bad(parse.error.errors.map((e) => e.message).join(", "));
+  if (!parse.success)
+    return bad(parse.error.errors.map((e) => e.message).join(", "));
 
   const idx = TEMPLATES.findIndex((t) => t.id === id);
   if (idx === -1) return bad("Template not found", 404);
@@ -113,10 +231,14 @@ export async function PUT(req) {
   const updated = {
     ...old,
     name: typeof parse.data.name === "string" ? parse.data.name : old.name,
-    subject: typeof parse.data.subject === "string" ? parse.data.subject : old.subject,
-    body: typeof parse.data.content === "string" ? parse.data.content : old.body,
+    subject:
+      typeof parse.data.subject === "string" ? parse.data.subject : old.subject,
+    body:
+      typeof parse.data.content === "string" ? parse.data.content : old.body,
     mode: parse.data.mode || old.mode,
-    attachments: Array.isArray(parse.data.attachments) ? parse.data.attachments : old.attachments,
+    attachments: Array.isArray(parse.data.attachments)
+      ? parse.data.attachments
+      : old.attachments,
     updatedAt: new Date().toISOString(),
   };
 
@@ -133,4 +255,3 @@ export async function DELETE(req) {
   TEMPLATES = TEMPLATES.filter((t) => t.id !== id);
   return ok({ id });
 }
-

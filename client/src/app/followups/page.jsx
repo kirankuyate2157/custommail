@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 8;
 
 // Format ISO -> readable
 const fmtDate = (iso) => {
@@ -181,7 +181,7 @@ export default function FollowUpsPage() {
           </div>
         </div>
 
-        <Card className={"px-2 py-1 rounded-md shadow-none"}>
+        <Card className={"px-2 py-1 border-none rounded-md shadow-none"}>
           <CardContent className='p-0'>
             {/* table header (desktop) */}
             <div className='hidden md:grid grid-cols-12 gap-3 items-center px-4 py-3 border-b text-sm text-muted-foreground bg-muted/20'>
@@ -364,39 +364,41 @@ export default function FollowUpsPage() {
             </div>
 
             {/* footer / pagination */}
-            <div className='px-4 py-3 border-t flex items-center justify-between'>
-              <div className='text-sm text-muted-foreground'>
-                Page {page} of {pageCount} — {total} total
+            {/* {page  pageCount && ( */}
+              <div className='px-4 py-3 border-t flex items-center justify-between'>
+                <div className='text-sm text-muted-foreground'>
+                  Page {page} of {pageCount} — {total} total
+                </div>
+                <div className='flex items-center gap-2'>
+                  <Button
+                    size='sm'
+                    onClick={() => {
+                      if (page > 1) {
+                        const next = page - 1;
+                        setPage(next);
+                        load({ page: next });
+                      }
+                    }}
+                    disabled={page <= 1}
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    size='sm'
+                    onClick={() => {
+                      if (page < pageCount) {
+                        const next = page + 1;
+                        setPage(next);
+                        load({ page: next });
+                      }
+                    }}
+                    disabled={page >= pageCount}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
-              <div className='flex items-center gap-2'>
-                <Button
-                  size='sm'
-                  onClick={() => {
-                    if (page > 1) {
-                      const next = page - 1;
-                      setPage(next);
-                      load({ page: next });
-                    }
-                  }}
-                  disabled={page <= 1}
-                >
-                  Prev
-                </Button>
-                <Button
-                  size='sm'
-                  onClick={() => {
-                    if (page < pageCount) {
-                      const next = page + 1;
-                      setPage(next);
-                      load({ page: next });
-                    }
-                  }}
-                  disabled={page >= pageCount}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
+            {/* )} */}
           </CardContent>
         </Card>
       </div>

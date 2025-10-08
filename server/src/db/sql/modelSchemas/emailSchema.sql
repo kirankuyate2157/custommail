@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS emails (
+  id SERIAL PRIMARY KEY,
+  sender VARCHAR(150) NOT NULL,
+  recipients TEXT[] NOT NULL,
+  subject VARCHAR(255),
+  body TEXT,
+  sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

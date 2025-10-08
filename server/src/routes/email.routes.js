@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { sendEmail, getThread } = require('../controllers/email.controller');
+import { sendEmail, getThread } from '../controllers/email.controller';
 
 router.post('/send', sendEmail);
 router.get('/thread', getThread);

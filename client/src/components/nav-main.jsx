@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 
 import {
   Collapsible,
@@ -9,7 +10,6 @@ import {
 } from "@/components/ui/collapsible";
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -19,45 +19,77 @@ import {
 } from "@/components/ui/sidebar";
 
 export function NavMain({ items }) {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const handleNavigate = (url) => {
+    router.push(url);
+  };
+
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => (
-          <Collapsible
-            key={item.title}
-            asChild
-            defaultOpen={item.isActive}
-            className='group/collapsible'
-          >
-            <SidebarMenuItem>
-              <CollapsibleTrigger asChild>
-                <a href={item.url}>
-                  <SidebarMenuButton tooltip={item.title}>
-                    {item.icon && <item.icon />}
+        {items.map((item) => {
+          const isActive =
+            pathname === item.url ||
+            item.items?.some((sub) => pathname === sub.url);
 
-                    <span>{item.title}</span>
+          return (
+            <Collapsible
+              key={item.title}
+              asChild
+              defaultOpen={isActive}
+              className='group/collapsible'
+            >
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                  <button
+                    onClick={() => handleNavigate(item.url)}
+                    className={`w-full text-left rounded-lg ${
+                      isActive ? "bg-gray-800 text-white" : ""
+                    }`}
+                  >
+                    <SidebarMenuButton tooltip={item.title}>
+                      {item.icon && <item.icon />}
+                      <span>{item.title}</span>
+                      {/* <ChevronRight
+                        className={`ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 ${
+                          isActive ? "text-white" : ""
+                        }`}
+                      /> */}
+                    </SidebarMenuButton>
+                  </button>
+                </CollapsibleTrigger>
 
-                    <ChevronRight className='ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90' />
-                  </SidebarMenuButton>
-                </a>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarMenuSub>
-                  {item.items?.map((subItem) => (
-                    <SidebarMenuSubItem key={subItem.title}>
-                      <SidebarMenuSubButton asChild>
-                        <a href={subItem.url}>
-                          <span>{subItem.title}</span>
-                        </a>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
-              </CollapsibleContent>
-            </SidebarMenuItem>
-          </Collapsible>
-        ))}
+                {item.items?.length > 0 && (
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {item.items.map((subItem) => {
+                        const isSubActive = pathname === subItem.url;
+                        return (
+                          <SidebarMenuSubItem key={subItem.title}>
+                            <SidebarMenuSubButton asChild>
+                              <button
+                                onClick={() => handleNavigate(subItem.url)}
+                                className={`w-full text-left ${
+                                  isSubActive
+                                    ? "bg-gray-800/60 text-white"
+                                    : "text-gray-300 hover:text-white"
+                                }`}
+                              >
+                                <span>{subItem.title}</span>
+                              </button>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                )}
+              </SidebarMenuItem>
+            </Collapsible>
+          );
+        })}
       </SidebarMenu>
     </SidebarGroup>
   );
