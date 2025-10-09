@@ -81,16 +81,86 @@ export async function GET() {
       id: "6",
       fromName: "Mohit Kumar",
       fromEmail: "mohit.k@alphacorp.com",
-      to: "partnership@alphacorp.com",
-      subject: "Business collaboration proposal",
+      to: "partnership@kwaysmail.com",
+      subject: "Exploring Collaboration Opportunities – K-Kways Mail (In Development)",
       time: "04:50 pm",
-      bodyHtml:
-        "<p>Hello Team,<br/>We would like to propose a collaboration between our companies. Please find the proposal attached.</p>",
+      bodyHtml: `
+    <p>Dear K-Kways Team,</p>
+
+    <p>I hope you're doing well.</p>
+
+    <p>We recently came across early previews of <strong>K-Kways Mail</strong>, and we’re genuinely impressed with the direction it’s taking — especially considering it’s still in active development. The idea of building a <strong>modern, secure, and India-focused mail management platform</strong> is extremely promising.</p>
+
+    <p>From what we understand, K-Kways Mail aims to go beyond traditional mail clients by introducing features such as:</p>
+
+    <ul>
+      <li><strong>Smart Templates</strong> for quick professional communication</li>
+      <li><strong>Bulk Contacts</strong> and <strong>Mail Scheduler</strong> for organized outreach</li>
+      <li><strong>Follow-up Tracking</strong> and <strong>Smart Filtering</strong> to avoid missed replies</li>
+      <li>Support for multiple accounts (Gmail, Outlook, and others)</li>
+      <li>Personal, Team, and Pro usage modes for different needs</li>
+      <li>Secure server-side data storage with privacy in mind</li>
+      <li>Desktop version in progress for extended accessibility</li>
+    </ul>
+
+    <p>We believe once this platform matures, it can bring great value to <strong>students, job seekers, marketing professionals, startups, and business teams</strong> who need a cleaner, smarter, and more personalized mail experience.</p>
+
+    <p>We’d love to explore early collaboration or potential integration discussions once your next development phase is live. Please find a brief overview of our proposal attached for your reference.</p>
+
+    <p>Best regards,<br/>
+    <strong>Mohit Kumar</strong><br/>
+    Partnerships & Alliances<br/>
+    AlphaCorp Innovations Pvt. Ltd.<br/>
+    <a href="mailto:mohit.k@alphacorp.com">mohit.k@alphacorp.com</a></p>
+  `,
       bodyText:
-        "Hello Team,\nWe would like to propose a collaboration between our companies. Please find the proposal attached.",
+        "Dear K-Kways Team,\n\nWe recently came across early previews of K-Kways Mail and are impressed by its vision — building a modern, India-focused email platform.\n\nFeatures like smart templates, bulk contact management, scheduler, follow-ups, multi-account support, and secure server-side storage show strong potential.\n\nWe’d love to discuss early collaboration once the next dev phase is ready.\n\nBest regards,\nMohit Kumar\nAlphaCorp Innovations Pvt. Ltd.",
+      hasAttachments: true,
+      attachments: [
+        { id: "a4", name: "AlphaCorp_KKways_Partnership_Overview.pdf", size: 155000, url: "#" }
+      ],
+    },
+    {
+      id: "62",
+      fromName: "Mohit Kumar",
+      fromEmail: "mohit.k@alphacorp.com",
+      to: "hello@kwaysmail.in",
+      subject: "Exploring Collaboration with Kways Mail Platform 🇮🇳",
+      time: "04:50 pm",
+      bodyHtml: `
+    <p>Hello Kways Team,<br/><br/>
+    I recently came across your new <strong>Indian-developed mail application</strong> project and was genuinely impressed by its vision and upcoming features.<br/><br/>
+    The concept of a <strong>modern, secure, and intelligent email client</strong> — built in India and for Indian users — feels both timely and essential.<br/><br/>
+    As mentioned, your ongoing development focuses on:<br/>
+    <ul>
+      <li>Smart filtering for priority and follow-up mails</li>
+      <li>Templated replies & quick drafts</li>
+      <li>Bulk contact management and scheduling</li>
+      <li>Integrated own mailbox + support for third-party accounts (Outlook, Gmail, etc.)</li>
+      <li>AI-powered reminders, follow-ups, and auto-sorting</li>
+      <li>Secure data storage with server-side encryption</li>
+      <li>Personal, Team, and Pro plans in development</li>
+      <li>Upcoming Desktop App for seamless workflow</li>
+    </ul>
+    It’s exciting to see how this platform will empower <strong>students, marketing professionals, business owners, and teams</strong> with one unified communication tool.<br/><br/>
+    I also appreciate your initiative of building an <strong>Indian mail ecosystem</strong> — tailored for our nation’s needs, ensuring data privacy and independence. 
+    Such projects can play a key role in shaping India’s digital future.<br/><br/>
+    Would love to connect and explore potential collaboration or contribution opportunities.<br/><br/>
+    Regards,<br/>
+    Mohit Kumar<br/>
+    AlphaCorp Pvt. Ltd.
+    </p>
+    <hr/>
+    <p style="font-size: 0.9em; color: gray;">
+      📩 This email was sent via the <strong>Kways Mail (Beta)</strong> – a new-age Indian mail platform currently under development. 
+      Our goal: <em>“Build for India. Scale for the world.”</em>
+    </p>
+  `,
       hasAttachments: true,
       attachments: [{ id: "a4", name: "proposal.pdf", size: 150000, url: "#" }],
-    },
+    }
+    ,
+    ,
     {
       id: "7",
       fromName: "Neha Sharma",

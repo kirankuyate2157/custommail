@@ -1,4 +1,5 @@
 
+"use client"
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppSidebar } from "@/components/app-sidebar"
@@ -30,7 +31,7 @@ const geistMono = Geist_Mono({
 //   title: "Kways Custom Email App",
 //   description: "A Kways custom email App for managing your inbox, send bulk emails, custom templates, analytics and more.",
 // };
-export const metadata = {
+ const metadata = {
   title: "Kways Custom Email App | Bulk Email & Templates",
   description:
     "Manage your inbox, send bulk emails, create custom templates, track analytics, and more with Kways custom email app.",

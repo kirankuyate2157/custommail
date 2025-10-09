@@ -87,7 +87,9 @@ export default function InboxPage() {
       setLoading(true);
       const res = await fetch("/api/mails", { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to fetch mails");
+      // const data = await res.json()
       const data = await res.json();
+      setMails((data.mails || []).filter(Boolean));
       setMails(data.mails || []);
       setSelectedMailId((prev) => prev ?? data.mails?.[0]?.id ?? null);
     } catch (e) {
@@ -103,18 +105,18 @@ export default function InboxPage() {
   }, [fetchMails]);
 
   const selectedMail = useMemo(
-    () => mails.find((m) => m.id === selectedMailId) || null,
+    () => mails?.find((m) => m?.id === selectedMailId) || null,
     [mails, selectedMailId]
   );
 
   const filteredMails = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return mails.filter((m) => {
+    return mails?.filter((m) => {
       if (filter === "with-attachments" && !m.hasAttachments) return false;
       if (!q) return true;
-      const hay = `${m.subject} ${m.fromName} ${m.fromEmail} ${
-        m.bodyText || ""
-      }`.toLowerCase();
+      const hay = `${m?.subject} ${m?.fromName} ${m?.fromEmail} ${
+        m?.bodyText || ""
+      }`?.toLowerCase();
       return hay.includes(q);
     });
   }, [mails, query, filter]);
@@ -123,12 +125,12 @@ export default function InboxPage() {
   const openCompose = useCallback(
     (prefill = {}) => {
       setComposeOpen(true);
-      setComposeMode(prefill.mode || "html");
-      setTo(prefill.to || "");
-      setCc(prefill.cc || "");
-      setBcc(prefill.bcc || "");
-      setSubject(prefill.subject || "");
-      setBody(prefill.body || "");
+      setComposeMode(prefill?.mode || "html");
+      setTo(prefill?.to || "");
+      setCc(prefill?.cc || "");
+      setBcc(prefill?.bcc || "");
+      setSubject(prefill?.subject || "");
+      setBody(prefill?.body || "");
       setFiles([]);
     },
     [setComposeOpen]
@@ -138,18 +140,18 @@ export default function InboxPage() {
   const handleReply = () => {
     if (!selectedMail) return;
     openCompose({
-      to: selectedMail.fromEmail,
-      subject: selectedMail.subject.startsWith("Re:")
-        ? selectedMail.subject
-        : `Re: ${selectedMail.subject}`,
+      to: selectedMail?.fromEmail,
+      subject: selectedMail?.subject?.startsWith("Re:")
+        ? selectedMail?.subject
+        : `Re: ${selectedMail?.subject}`,
       body:
         composeMode === "html"
-          ? `<p><br/></p><blockquote>${selectedMail.bodyHtml}</blockquote>`
+          ? `<p><br/></p><blockquote>${selectedMail?.bodyHtml}</blockquote>`
           : composeMode === "markdown"
-          ? `\n\n> ${selectedMail.bodyText
+          ? `\n\n> ${selectedMail?.bodyText
               .split("\n")
               .join("\n> ")}`
-          : `\n\n--- Original message ---\n${selectedMail.bodyText}`,
+          : `\n\n--- Original message ---\n${selectedMail?.bodyText}`,
     });
   };
 
@@ -157,17 +159,17 @@ export default function InboxPage() {
     if (!selectedMail) return;
     openCompose({
       to: "",
-      subject: selectedMail.subject.startsWith("Fwd:")
-        ? selectedMail.subject
-        : `Fwd: ${selectedMail.subject}`,
+      subject: selectedMail?.subject.startsWith("Fwd:")
+        ? selectedMail?.subject
+        : `Fwd: ${selectedMail?.subject}`,
       body:
         composeMode === "html"
-          ? `<p><br/></p><blockquote>${selectedMail.bodyHtml}</blockquote>`
+          ? `<p><br/></p><blockquote>${selectedMail?.bodyHtml}</blockquote>`
           : composeMode === "markdown"
-          ? `\n\n> ${selectedMail.bodyText
+          ? `\n\n> ${selectedMail?.bodyText
               .split("\n")
               .join("\n> ")}`
-          : `\n\n--- Forwarded message ---\n${selectedMail.bodyText}`,
+          : `\n\n--- Forwarded message ---\n${selectedMail?.bodyText}`,
     });
   };
 
@@ -178,7 +180,7 @@ export default function InboxPage() {
     e.target.value = ""; // reset
   };
   const removeFile = (name) =>
-    setFiles((prev) => prev.filter((f) => f.name !== name));
+    setFiles((prev) => prev.filter((f) => f?.name !== name));
 
   // Compose: convert body for SMTP
   const getPayloadForSend = () => {
@@ -210,9 +212,9 @@ export default function InboxPage() {
       htmlBody,
       textBody,
       attachments: files.map((f) => ({
-        name: f.name,
-        size: f.size,
-        type: f.type,
+        name: f?.name,
+        size: f?.size,
+        type: f?.type,
       })),
     };
   };
@@ -236,6 +238,7 @@ export default function InboxPage() {
         headers: { "Content-Type": "application/json" },
       });
       const data = await res.json();
+      
       if (!res.ok || !data.ok) {
         throw new Error(data?.message || "Send failed");
       }
@@ -366,31 +369,31 @@ export default function InboxPage() {
               No mails match your search.
             </div>
           ) : (
-            filteredMails.map((m) => (
+            filteredMails?.map((m) => (
               <button
-                key={m.id}
+                key={m?.id}
                 className={`text-left w-full border-b p-3 hover:bg-muted focus:bg-muted outline-none ${
-                  selectedMailId === m.id ? "bg-muted" : ""
+                  selectedMailId === m?.id ? "bg-muted" : ""
                 }`}
                 onClick={() => setSelectedMailId(m.id)}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="font-medium truncate">
-                      {m.subject || "No subject"}
+                      {m?.subject || "No subject"}
                     </div>
                     <div className="text-xs text-muted-foreground truncate">
-                      {m.fromName || m.fromEmail}
+                      {m?.fromName || m?.fromEmail}
                     </div>
                   </div>
                   <div className="text-[11px] text-muted-foreground whitespace-nowrap">
-                    {m.time}
+                    {m?.time}
                   </div>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                  {m.bodyText}
+                  {m?.bodyText}
                 </div>
-                {m.hasAttachments && (
+                {m?.hasAttachments && (
                   <div className="mt-2 text-[11px] inline-block rounded bg-muted px-2 py-0.5">
                     📎 Attachments
                   </div>
@@ -408,17 +411,17 @@ export default function InboxPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="text-xl font-semibold break-words">
-                    {selectedMail.subject}
+                    {selectedMail?.subject}
                   </h2>
                   <div className="text-sm text-muted-foreground mt-1">
-                    From: {selectedMail.fromName} &lt;{selectedMail.fromEmail}
+                    From: {selectedMail?.fromName} &lt;{selectedMail?.fromEmail}
                     &gt;
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    To: {selectedMail.to}
+                    To: {selectedMail?.to}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {selectedMail.time}
+                    {selectedMail?.time}
                   </div>
                 </div>
                 <div className="shrink-0 flex gap-2">
@@ -439,16 +442,16 @@ export default function InboxPage() {
 
               <div
                 className="prose max-w-none mt-5"
-                dangerouslySetInnerHTML={{ __html: selectedMail.bodyHtml }}
+                dangerouslySetInnerHTML={{ __html: selectedMail?.bodyHtml }}
               />
 
-              {selectedMail.attachments?.length > 0 && (
+              {selectedMail?.attachments?.length > 0 && (
                 <section className="mt-6">
                   <h3 className="font-medium mb-2">Attachments</h3>
                   <ul className="space-y-1">
-                    {selectedMail.attachments.map((a) => (
+                    {selectedMail?.attachments.map((a) => (
                       <li
-                        key={a.id}
+                        key={a?.id}
                         className="flex items-center justify-between text-sm"
                       >
                         <a
@@ -457,10 +460,10 @@ export default function InboxPage() {
                           rel="noreferrer"
                           className="text-primary hover:underline"
                         >
-                          📎 {a.name}
+                          📎 {a?.name}
                         </a>
                         <span className="text-muted-foreground">
-                          {bytesToKB(a.size)}
+                          {bytesToKB(a?.size)}
                         </span>
                       </li>
                     ))}

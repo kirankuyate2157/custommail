@@ -117,8 +117,26 @@ let TEMPLATES = [
   {
     id: "t11",
     name: "Networking Request",
-    subject: "Let's Connect",
-    body: "<p>Hi [Recipient],<br/>I would like to connect with you to discuss potential networking opportunities.</p>",
+    subject: "Let's Connect & Explore Opportunities",
+    body: `
+    <p>Hi [Recipient],</p>
+
+    <p>I hope this message finds you well.</p>
+
+    <p>My name is [Your Name], and I came across your profile/company while exploring [specific industry/field]. I am very interested in connecting with you to learn more about your work and explore potential opportunities for collaboration, guidance, or knowledge sharing.</p>
+
+    <p>I believe that connecting with professionals like you could be mutually beneficial, whether it’s discussing innovative ideas, sharing industry insights, or exploring future projects together.</p>
+
+    <p>If you have some time in the coming days, I would love to schedule a brief call or meeting at your convenience. I am flexible with timings and can adjust as per your availability.</p>
+
+    <p>Looking forward to connecting with you.</p>
+
+    <p>Best regards,<br/>
+    [Your Name]<br/>
+    [Your Role/Title]<br/>
+    [Your Company/Organization]<br/>
+    [Email / Phone]</p>
+  `,
     mode: "html",
     attachments: [],
     createdAt: new Date().toISOString(),

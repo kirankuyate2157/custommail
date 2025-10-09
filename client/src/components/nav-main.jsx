@@ -18,14 +18,18 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 
+
 export function NavMain({ items }) {
   const pathname = usePathname();
   const router = useRouter();
+  
+  // Prevent hydration mismatch on server
+  if (!pathname) return null;
 
   const handleNavigate = (url) => {
+    if (!url) return;
     router.push(url);
   };
-
   return (
     <SidebarGroup>
       <SidebarMenu>
@@ -43,7 +47,7 @@ export function NavMain({ items }) {
             >
               <SidebarMenuItem>
                 <CollapsibleTrigger asChild>
-                  <button
+                  <div
                     onClick={() => handleNavigate(item.url)}
                     className={`w-full text-left rounded-lg ${
                       isActive ? "bg-gray-800 text-white" : ""
@@ -58,10 +62,10 @@ export function NavMain({ items }) {
                         }`}
                       /> */}
                     </SidebarMenuButton>
-                  </button>
+                  </div>
                 </CollapsibleTrigger>
 
-                {item.items?.length > 0 && (
+                {item?.items?.length > 0 && (
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       {item.items.map((subItem) => {
@@ -69,7 +73,7 @@ export function NavMain({ items }) {
                         return (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton asChild>
-                              <button
+                              <div
                                 onClick={() => handleNavigate(subItem.url)}
                                 className={`w-full text-left ${
                                   isSubActive
@@ -78,7 +82,7 @@ export function NavMain({ items }) {
                                 }`}
                               >
                                 <span>{subItem.title}</span>
-                              </button>
+                              </div>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
                         );
