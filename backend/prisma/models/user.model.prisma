@@ -1,1 +1,16 @@
-// user model prisma
+model User {
+  id          String    @id @default(cuid())
+  tenantId    String
+  name        String
+  email       String    @unique
+  password    String
+  role        String
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  emails      Email[]
+  sessions    Session[]
+  audits      Audit[]
+}

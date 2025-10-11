@@ -1,1 +1,11 @@
 // audit model prisma
+model Audit {
+  id        String   @id @default(cuid())
+  userId    String
+  emailId   String?
+  action    String
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  email     Email?   @relation(fields: [emailId], references: [id])
+}
