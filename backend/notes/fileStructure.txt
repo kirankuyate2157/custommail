@@ -1,0 +1,90 @@
+backend/
+├─ src/
+│  ├─ config/
+│  │  ├─ db.ts
+│  │  ├─ env.ts
+│  │  ├─ mail.ts
+│  │  └─ logger.ts
+│  ├─ controllers/
+│  │  ├─ auth.controller.ts
+│  │  ├─ user.controller.ts
+│  │  ├─ tenant.controller.ts
+│  │  ├─ email.controller.ts
+│  │  ├─ template.controller.ts
+│  │  ├─ campaign.controller.ts
+│  │  ├─ contact.controller.ts
+│  │  ├─ session.controller.ts
+│  │  └─ audit.controller.ts
+│  ├─ services/
+│  │  ├─ auth.service.ts
+│  │  ├─ user.service.ts
+│  │  ├─ tenant.service.ts
+│  │  ├─ email.service.ts
+│  │  ├─ template.service.ts
+│  │  ├─ campaign.service.ts
+│  │  ├─ contact.service.ts
+│  │  ├─ session.service.ts
+│  │  └─ audit.service.ts
+│  ├─ repositories/
+│  │  ├─ user.repository.ts
+│  │  ├─ tenant.repository.ts
+│  │  ├─ email.repository.ts
+│  │  ├─ template.repository.ts
+│  │  ├─ campaign.repository.ts
+│  │  ├─ contact.repository.ts
+│  │  ├─ session.repository.ts
+│  │  └─ audit.repository.ts
+│  ├─ middlewares/
+│  │  ├─ auth.middleware.ts
+│  │  ├─ role.middleware.ts
+│  │  ├─ tenant.middleware.ts
+│  │  ├─ error.middleware.ts
+│  │  └─ rateLimit.middleware.ts
+│  ├─ routes/
+│  │  ├─ auth.routes.ts
+│  │  ├─ user.routes.ts
+│  │  ├─ tenant.routes.ts
+│  │  ├─ email.routes.ts
+│  │  ├─ template.routes.ts
+│  │  ├─ campaign.routes.ts
+│  │  ├─ contact.routes.ts
+│  │  ├─ session.routes.ts
+│  │  └─ audit.routes.ts
+│  ├─ utils/
+│  │  ├─ crypto.ts
+│  │  ├─ validator.ts
+│  │  ├─ date.ts
+│  │  └─ mailParser.ts
+│  ├─ types/
+│  │  ├─ user.types.ts
+│  │  ├─ tenant.types.ts
+│  │  ├─ email.types.ts
+│  │  ├─ template.types.ts
+│  │  ├─ campaign.types.ts
+│  │  ├─ contact.types.ts
+│  │  └─ session.types.ts
+│  ├─ jobs/
+│  │  ├─ campaignScheduler.ts
+│  │  ├─ emailSender.ts
+│  │  └─ cleanupJobs.ts
+│  ├─ app.ts
+│  └─ server.ts
+├─ prisma/
+│  ├─ models/
+│  │  ├─ user.model.prisma
+│  │  ├─ tenant.model.prisma
+│  │  ├─ email.model.prisma
+│  │  ├─ template.model.prisma
+│  │  ├─ campaign.model.prisma
+│  │  ├─ contact.model.prisma
+│  │  ├─ session.model.prisma
+│  │  └─ audit.model.prisma
+│  │  └─ ..so on 32 files models
+│  ├─ migrations/
+│  └─ schema.prisma
+│  └─ merge-models.js
+│  └─ split-models.js
+├─ package.json
+├─ tsconfig.json
+├─ .env
+└─ README.md
