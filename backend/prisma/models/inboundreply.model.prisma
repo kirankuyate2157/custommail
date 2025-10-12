@@ -1,0 +1,16 @@
+model InboundReply {
+  id                  String    @id @default(uuid())
+  mail_account_id     String
+  message_id          String
+  from_email          String?
+  to_email            String?
+  subject             String?
+  body_text           String?
+  body_html           String?
+  provider_message_id String?
+  reply_time          DateTime?
+  created_at          DateTime  @default(now())
+
+  mailAccount MailAccount  @relation(fields: [mail_account_id], references: [id])
+  message     EmailMessage @relation(fields: [message_id], references: [id])
+}

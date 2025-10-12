@@ -1,12 +1,36 @@
-// tenant model prisma
 model Tenant {
-  id          String   @id @default(uuid())
-  name        String
-  domain      String
-  users       User[]
-  policies    TenantPolicy[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  defaultAdmin User?   @relation("TenantAdmin", fields: [defaultAdminUserId], references: [id])
-  defaultAdminUserId String?
+  id                    String   @id @default(uuid())
+  name                  String
+  domain                String?  @unique
+  plan_type             String?
+  status                String?
+  default_admin_user_id String?  @unique
+  storage_limit_mb      Int?     @default(0)
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  users          User[]
+  userOrgMap     UserOrgMap[]
+  roles          Role[]
+  sessions       Session[]
+  auditLogs      AuditLog[]
+  adminAuditLogs AdminAuditLog[]
+  mailAccounts   MailAccount[]
+  mailServers    MailServer[]
+  syncAudits     SyncAudit[]
+  contacts       Contact[]
+  imports        Import[]
+  emailTemplates EmailTemplate[]
+  emailCampaigns EmailCampaign[]
+  threadHistory  ThreadHistory[]
+  trackingLinks  TrackingLink[]
+  usageRecords   UsageRecord[]
+  invoices       Invoice[]
+  // tenantPolicies         TenantPolicy?
+  activities     Activity[]
+
+  adminUser      User?          @relation("TenantAdmin", fields: [default_admin_user_id], references: [id])
+  emailMessages  EmailMessage[]
+  bounceReports  BounceReport[] // for proper reverse relation
+  tenantPolicies TenantPolicy[] // change to one-to-many
 }

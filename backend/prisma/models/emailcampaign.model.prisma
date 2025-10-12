@@ -1,0 +1,39 @@
+model EmailCampaign {
+  id                    String    @id @default(uuid())
+  tenant_id             String
+  created_by            String?
+  campaign_name         String?
+  description           String?
+  template_id           String?
+  template_snapshot     Json?
+  email_subject         String?
+  email_body_html       String?
+  email_body_text       String?
+  contact_list_ids      String[]
+  segment_rules         Json?
+  final_recipient_count Int?
+  from_name             String?
+  from_email            String?
+  reply_to_email        String?
+  sending_domain        String?
+  schedule_type         String?
+  schedule_time         DateTime?
+  throttle_rate         Int?
+  batch_size            Int?
+  tracking_enabled      Boolean?
+  track_opens           Boolean?
+  track_clicks          Boolean?
+  unsubscribe_link      String?
+  custom_utm_params     Json?
+  status                String?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  tenant        Tenant              @relation(fields: [tenant_id], references: [id])
+  createdBy     User?               @relation(fields: [created_by], references: [id])
+  template      EmailTemplate?      @relation(fields: [template_id], references: [id])
+  variants      CampaignVariant[]
+  recipients    CampaignRecipient[]
+  emailMessages EmailMessage[]
+  trackingLinks TrackingLink[]
+}

@@ -1,0 +1,15 @@
+model SyncAudit {
+  id              String    @id @default(uuid())
+  mail_account_id String
+  tenant_id       String
+  user_id         String
+  operation       String?
+  status          String?
+  started_at      DateTime?
+  finished_at     DateTime?
+  details         Json?
+
+  mailAccount MailAccount @relation(fields: [mail_account_id], references: [id])
+  tenant      Tenant      @relation(fields: [tenant_id], references: [id])
+  user        User        @relation(fields: [user_id], references: [id])
+}

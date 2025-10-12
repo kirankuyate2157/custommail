@@ -1,0 +1,14 @@
+model AuditLog {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  user_id     String?
+  action      String?
+  target_type String?
+  target_id   String?
+  ip_address  String?
+  details     Json?
+  created_at  DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenant_id], references: [id])
+  user   User?  @relation(fields: [user_id], references: [id])
+}

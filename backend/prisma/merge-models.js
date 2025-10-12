@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { exec } from 'child_process';
 
 // ✅ ES Modules compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -33,3 +34,13 @@ fs.readdirSync(modelsDir)
 fs.writeFileSync(schemaFile, schemaContent);
 
 console.log('✅ schema.prisma generated with all models!');
+
+// --- Run Prisma format on main schema.prisma ---
+exec('npx prisma format', { cwd: __dirname }, (err, stdout, stderr) => {
+  if (err) {
+    console.error('❌ Prisma format error:', err);
+    return;
+  }
+  if (stderr) console.error(stderr);
+  console.log('✅ Prisma schema formatted successfully.');
+});

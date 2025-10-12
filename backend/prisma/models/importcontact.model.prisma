@@ -1,0 +1,11 @@
+model ImportContact {
+  id            String  @id @default(uuid())
+  import_id     String
+  contact_id    String
+  row_index     Int?
+  status        String?
+  error_message String?
+
+  import  Import  @relation(fields: [import_id], references: [id])
+  contact Contact @relation(fields: [contact_id], references: [id])
+}

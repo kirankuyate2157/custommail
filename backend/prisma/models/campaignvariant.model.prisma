@@ -1,0 +1,12 @@
+model CampaignVariant {
+  id          String   @id @default(uuid())
+  campaign_id String
+  variant_key String?
+  subject     String?
+  body_html   String?
+  body_text   String?
+  created_at  DateTime @default(now())
+
+  campaign   EmailCampaign       @relation(fields: [campaign_id], references: [id])
+  recipients CampaignRecipient[]
+}

@@ -1,0 +1,602 @@
+// ================================
+//  Prisma Schema: KMAILS
+// ================================
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Tenancy & Identity ----------
+model Tenant {
+  id                    String   @id @default(uuid())
+  name                  String
+  domain                String?  @unique
+  plan_type             String?
+  status                String?
+  default_admin_user_id String?  @unique
+  storage_limit_mb      Int?     @default(0)
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  users          User[]
+  userOrgMap     UserOrgMap[]
+  roles          Role[]
+  sessions       Session[]
+  auditLogs      AuditLog[]
+  adminAuditLogs AdminAuditLog[]
+  mailAccounts   MailAccount[]
+  mailServers    MailServer[]
+  syncAudits     SyncAudit[]
+  contacts       Contact[]
+  imports        Import[]
+  emailTemplates EmailTemplate[]
+  emailCampaigns EmailCampaign[]
+  threadHistory  ThreadHistory[]
+  trackingLinks  TrackingLink[]
+  usageRecords   UsageRecord[]
+  invoices       Invoice[]
+  // tenantPolicies         TenantPolicy?
+  activities     Activity[]
+
+  adminUser      User?          @relation("TenantAdmin", fields: [default_admin_user_id], references: [id])
+  emailMessages  EmailMessage[]
+  bounceReports  BounceReport[] // for proper reverse relation
+  tenantPolicies TenantPolicy[] // change to one-to-many
+}
+
+model User {
+  id            String    @id @default(uuid())
+  tenant_id     String?
+  email         String    @unique
+  full_name     String?
+  username      String?
+  password_hash String?
+  auth_provider String?
+  role          String?
+  status        String?
+  last_login_at DateTime?
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  access_token  String?
+  refresh_token String?
+  ip_address    String?
+  user_agent    String?
+
+  tenant          Tenant?         @relation(fields: [tenant_id], references: [id])
+  userOrgMap      UserOrgMap[]
+  sessions        Session[]
+  auditLogs       AuditLog[]
+  adminAuditLogs  AdminAuditLog[]
+  mailAccounts    MailAccount[]
+  syncAudits      SyncAudit[]
+  contactsAdded   Contact[]       @relation("AddedBy")
+  importsUploaded Import[]        @relation("UploadedBy")
+  emailTemplates  EmailTemplate[]
+  emailCampaigns  EmailCampaign[]
+  tenantPolicies  TenantPolicy[]
+  activities      Activity[]
+
+  tenantAdminOf Tenant[] @relation("TenantAdmin")
+}
+
+model UserOrgMap {
+  id          String   @id @default(uuid())
+  user_id     String
+  tenant_id   String
+  role_in_org String?
+  created_at  DateTime @default(now())
+
+  user   User   @relation(fields: [user_id], references: [id])
+  tenant Tenant @relation(fields: [tenant_id], references: [id])
+}
+
+// ---------- RBAC ----------
+model Role {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  name        String?
+  description String?
+  created_at  DateTime @default(now())
+
+  tenant      Tenant           @relation(fields: [tenant_id], references: [id])
+  permissions RolePermission[]
+}
+
+model RolePermission {
+  id             String   @id @default(uuid())
+  role_id        String
+  permission_key String?
+  created_at     DateTime @default(now())
+
+  role Role @relation(fields: [role_id], references: [id])
+}
+
+// ---------- Sessions & Audits ----------
+model Session {
+  id          String    @id @default(uuid())
+  user_id     String
+  tenant_id   String
+  ip_address  String?
+  device_info String?
+  created_at  DateTime  @default(now())
+  expires_at  DateTime?
+  is_active   Boolean   @default(true)
+
+  user   User         @relation(fields: [user_id], references: [id])
+  tenant Tenant       @relation(fields: [tenant_id], references: [id])
+  logs   SessionLog[]
+}
+
+model SessionLog {
+  id         String   @id @default(uuid())
+  session_id String
+  event      String?
+  provider   String?
+  details    Json?
+  created_at DateTime @default(now())
+
+  session Session @relation(fields: [session_id], references: [id])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  user_id     String?
+  action      String?
+  target_type String?
+  target_id   String?
+  ip_address  String?
+  details     Json?
+  created_at  DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenant_id], references: [id])
+  user   User?  @relation(fields: [user_id], references: [id])
+}
+
+model AdminAuditLog {
+  id            String   @id @default(uuid())
+  admin_id      String?
+  tenant_id     String?
+  action        String?
+  resource_type String?
+  resource_id   String?
+  timestamp     DateTime @default(now())
+  status        String?
+  notes         String?
+
+  admin  User?   @relation(fields: [admin_id], references: [id])
+  tenant Tenant? @relation(fields: [tenant_id], references: [id])
+}
+
+// ---------- Mail Providers & Accounts ----------
+model MailProvider {
+  id         String   @id @default(uuid())
+  name       String?
+  protocol   String?
+  auth_type  String?
+  smtp_host  String?
+  imap_host  String?
+  scopes     String[]
+  token_url  String?
+  docs_url   String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  mailAccounts MailAccount[]
+}
+
+model MailAccount {
+  id                      String    @id @default(uuid())
+  tenant_id               String
+  user_id                 String
+  provider_id             String?
+  email_address           String?
+  display_name            String?
+  access_type             String?
+  encrypted_access_token  String?
+  encrypted_refresh_token String?
+  token_expires_at        DateTime?
+  smtp_username           String?
+  encrypted_smtp_password String?
+  imap_settings           Json?
+  is_primary              Boolean   @default(false)
+  status                  String?
+  last_connected_at       DateTime?
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
+
+  tenant         Tenant         @relation(fields: [tenant_id], references: [id])
+  user           User           @relation(fields: [user_id], references: [id])
+  provider       MailProvider?  @relation(fields: [provider_id], references: [id])
+  syncAudits     SyncAudit[]
+  inboundReplies InboundReply[]
+  emailMessages  EmailMessage[]
+}
+
+model MailServer {
+  id                 String   @id @default(uuid())
+  tenant_id          String
+  name               String?
+  host               String?
+  port               Int?
+  tls                Boolean?
+  username           String?
+  encrypted_password String?
+  description        String?
+  is_default         Boolean? @default(false)
+  status             String?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenant_id], references: [id])
+}
+
+model SyncAudit {
+  id              String    @id @default(uuid())
+  mail_account_id String
+  tenant_id       String
+  user_id         String
+  operation       String?
+  status          String?
+  started_at      DateTime?
+  finished_at     DateTime?
+  details         Json?
+
+  mailAccount MailAccount @relation(fields: [mail_account_id], references: [id])
+  tenant      Tenant      @relation(fields: [tenant_id], references: [id])
+  user        User        @relation(fields: [user_id], references: [id])
+}
+
+// ---------- Contacts & Imports ----------
+model Contact {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  pronouns     String?
+  full_name    String?
+  email        String?
+  phone        String?
+  job_title    String?
+  company_name String?
+  linkedin_url String?
+  other_url    String?
+  form_url     String?
+  location     String?
+  source       String?
+  added_by     String?
+  tags         Json?
+  notes        String?
+  verified     Boolean  @default(false)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  tenant             Tenant              @relation(fields: [tenant_id], references: [id])
+  addedBy            User?               @relation("AddedBy", fields: [added_by], references: [id])
+  importContacts     ImportContact[]
+  campaignRecipients CampaignRecipient[]
+  activities         Activity[]
+}
+
+model Import {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  uploaded_by String?
+  filename    String?
+  source_type String?
+  metadata    Json?
+  created_at  DateTime @default(now())
+
+  tenant         Tenant          @relation(fields: [tenant_id], references: [id])
+  uploadedBy     User?           @relation("UploadedBy", fields: [uploaded_by], references: [id])
+  importContacts ImportContact[]
+}
+
+model ImportContact {
+  id            String  @id @default(uuid())
+  import_id     String
+  contact_id    String
+  row_index     Int?
+  status        String?
+  error_message String?
+
+  import  Import  @relation(fields: [import_id], references: [id])
+  contact Contact @relation(fields: [contact_id], references: [id])
+}
+
+// ---------- Templates ----------
+model EmailTemplate {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  name         String?
+  subject      String?
+  body_html    String?
+  body_text    String?
+  placeholders Json?
+  created_by   String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  tenant         Tenant            @relation(fields: [tenant_id], references: [id])
+  createdBy      User?             @relation(fields: [created_by], references: [id])
+  versions       TemplateVersion[]
+  emailCampaigns EmailCampaign[]
+}
+
+model TemplateVersion {
+  id          String   @id @default(uuid())
+  template_id String
+  version_no  Int?
+  name        String?
+  subject     String?
+  body_html   String?
+  body_text   String?
+  created_at  DateTime @default(now())
+
+  template EmailTemplate @relation(fields: [template_id], references: [id])
+}
+
+// ---------- Campaigns ----------
+model EmailCampaign {
+  id                    String    @id @default(uuid())
+  tenant_id             String
+  created_by            String?
+  campaign_name         String?
+  description           String?
+  template_id           String?
+  template_snapshot     Json?
+  email_subject         String?
+  email_body_html       String?
+  email_body_text       String?
+  contact_list_ids      String[]
+  segment_rules         Json?
+  final_recipient_count Int?
+  from_name             String?
+  from_email            String?
+  reply_to_email        String?
+  sending_domain        String?
+  schedule_type         String?
+  schedule_time         DateTime?
+  throttle_rate         Int?
+  batch_size            Int?
+  tracking_enabled      Boolean?
+  track_opens           Boolean?
+  track_clicks          Boolean?
+  unsubscribe_link      String?
+  custom_utm_params     Json?
+  status                String?
+  created_at            DateTime  @default(now())
+  updated_at            DateTime  @updatedAt
+
+  tenant        Tenant              @relation(fields: [tenant_id], references: [id])
+  createdBy     User?               @relation(fields: [created_by], references: [id])
+  template      EmailTemplate?      @relation(fields: [template_id], references: [id])
+  variants      CampaignVariant[]
+  recipients    CampaignRecipient[]
+  emailMessages EmailMessage[]
+  trackingLinks TrackingLink[]
+}
+
+model CampaignVariant {
+  id          String   @id @default(uuid())
+  campaign_id String
+  variant_key String?
+  subject     String?
+  body_html   String?
+  body_text   String?
+  created_at  DateTime @default(now())
+
+  campaign   EmailCampaign       @relation(fields: [campaign_id], references: [id])
+  recipients CampaignRecipient[]
+}
+
+model CampaignRecipient {
+  id                     String    @id @default(uuid())
+  campaign_id            String
+  contact_id             String?
+  email_address          String?
+  variant_id             String?
+  delivery_status        String?
+  delivery_time          DateTime?
+  bounce_reason          String?
+  retry_count            Int?      @default(0)
+  open_count             Int?      @default(0)
+  first_open_time        DateTime?
+  last_open_time         DateTime?
+  click_count            Int?      @default(0)
+  last_click_time        DateTime?
+  clicked_links          Json?
+  reply_status           String?
+  reply_time             DateTime?
+  reply_message_id       String?
+  unsubscribed           Boolean?  @default(false)
+  unsubscribed_time      DateTime?
+  gdpr_consent_status    String?
+  engagement_score       Int?      @default(0)
+  personalized_subject   String?
+  personalized_body_hash String?
+  processing_status      String?
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @updatedAt
+
+  campaign    EmailCampaign    @relation(fields: [campaign_id], references: [id])
+  contact     Contact?         @relation(fields: [contact_id], references: [id])
+  variant     CampaignVariant? @relation(fields: [variant_id], references: [id])
+  emailEvents EmailEvent[]
+}
+
+// ---------- Email Messages ----------
+model EmailMessage {
+  id                  String    @id @default(uuid())
+  tenant_id           String
+  campaign_id         String?
+  mail_account_id     String?
+  message_id          String?
+  thread_id           String?
+  provider_thread_id  String?
+  provider_message_id String?
+  recipient_email     String?
+  subject             String?
+  body_html           String?
+  body_text           String?
+  direction           String?
+  status              String?
+  sent_at             DateTime?
+  delivered_at        DateTime?
+  opened_at           DateTime?
+  clicked_at          DateTime?
+  replied_at          DateTime?
+  bounce_reason       String?
+  raw_headers         String?
+  provider_response   Json?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  tenant         Tenant         @relation(fields: [tenant_id], references: [id])
+  campaign       EmailCampaign? @relation(fields: [campaign_id], references: [id])
+  mailAccount    MailAccount?   @relation(fields: [mail_account_id], references: [id])
+  inboundReplies InboundReply[]
+  emailEvents    EmailEvent[]
+  bounceReports  BounceReport[]
+}
+
+model ThreadHistory {
+  id               String    @id @default(uuid())
+  thread_key       String?
+  tenant_id        String
+  last_sync_at     DateTime?
+  messages_summary Json?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenant_id], references: [id])
+}
+
+model InboundReply {
+  id                  String    @id @default(uuid())
+  mail_account_id     String
+  message_id          String
+  from_email          String?
+  to_email            String?
+  subject             String?
+  body_text           String?
+  body_html           String?
+  provider_message_id String?
+  reply_time          DateTime?
+  created_at          DateTime  @default(now())
+
+  mailAccount MailAccount  @relation(fields: [mail_account_id], references: [id])
+  message     EmailMessage @relation(fields: [message_id], references: [id])
+}
+
+// ---------- Events & Tracking ----------
+model EmailEvent {
+  id                    String    @id @default(uuid())
+  message_id            String
+  campaign_recipient_id String?
+  event_type            String?
+  event_time            DateTime?
+  ip_address            String?
+  user_agent            String?
+  metadata              Json?
+
+  message           EmailMessage       @relation(fields: [message_id], references: [id])
+  campaignRecipient CampaignRecipient? @relation(fields: [campaign_recipient_id], references: [id])
+}
+
+model TrackingLink {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  campaign_id  String?
+  original_url String?
+  tracking_url String?
+  clicks_count Int?     @default(0)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  tenant   Tenant         @relation(fields: [tenant_id], references: [id])
+  campaign EmailCampaign? @relation(fields: [campaign_id], references: [id])
+}
+
+model BounceReport {
+  id              String    @id @default(uuid())
+  message_id      String
+  tenant_id       String
+  recipient_email String?
+  bounce_type     String?
+  bounce_subtype  String?
+  bounce_time     DateTime?
+  raw_response    String?
+  created_at      DateTime  @default(now())
+
+  message EmailMessage @relation(fields: [message_id], references: [id])
+  tenant  Tenant       @relation(fields: [tenant_id], references: [id])
+}
+
+// ---------- Billing ----------
+model BillingPlan {
+  id               String   @id @default(uuid())
+  name             String?
+  monthly_fee      Decimal?
+  per_email_charge Decimal?
+  limits           Json?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+}
+
+model UsageRecord {
+  id                 String   @id @default(uuid())
+  tenant_id          String
+  period             String?
+  email_sent_count   Int?     @default(0)
+  email_opened_count Int?     @default(0)
+  charge_amount      Decimal?
+  generated_at       DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenant_id], references: [id])
+}
+
+model Invoice {
+  id             String    @id @default(uuid())
+  tenant_id      String
+  amount         Decimal?
+  status         String?
+  billing_period String?
+  issued_at      DateTime  @default(now())
+  paid_at        DateTime?
+
+  tenant Tenant @relation(fields: [tenant_id], references: [id])
+}
+
+// ---------- Policies & Activities ----------
+
+model TenantPolicy {
+  id                       String   @id @default(uuid())
+  tenant_id                String
+  allow_custom_smtp        Boolean? @default(false)
+  max_mailboxes            Int?     @default(1)
+  storage_limit_mb         Int?     @default(1024)
+  allow_external_providers Boolean? @default(true)
+  allow_auto_sync          Boolean? @default(true)
+  created_by               String?
+  updated_at               DateTime @updatedAt
+
+  tenant    Tenant @relation(fields: [tenant_id], references: [id])
+  createdBy User?  @relation(fields: [created_by], references: [id])
+}
+
+model Activity {
+  id         String   @id @default(uuid())
+  tenant_id  String
+  user_id    String
+  contact_id String?
+  action     String?
+  metadata   Json?
+  created_at DateTime @default(now())
+
+  tenant  Tenant   @relation(fields: [tenant_id], references: [id])
+  user    User     @relation(fields: [user_id], references: [id])
+  contact Contact? @relation(fields: [contact_id], references: [id])
+}

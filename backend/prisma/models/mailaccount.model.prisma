@@ -1,0 +1,27 @@
+model MailAccount {
+  id                      String    @id @default(uuid())
+  tenant_id               String
+  user_id                 String
+  provider_id             String?
+  email_address           String?
+  display_name            String?
+  access_type             String?
+  encrypted_access_token  String?
+  encrypted_refresh_token String?
+  token_expires_at        DateTime?
+  smtp_username           String?
+  encrypted_smtp_password String?
+  imap_settings           Json?
+  is_primary              Boolean   @default(false)
+  status                  String?
+  last_connected_at       DateTime?
+  created_at              DateTime  @default(now())
+  updated_at              DateTime  @updatedAt
+
+  tenant         Tenant         @relation(fields: [tenant_id], references: [id])
+  user           User           @relation(fields: [user_id], references: [id])
+  provider       MailProvider?  @relation(fields: [provider_id], references: [id])
+  syncAudits     SyncAudit[]
+  inboundReplies InboundReply[]
+  emailMessages  EmailMessage[]
+}

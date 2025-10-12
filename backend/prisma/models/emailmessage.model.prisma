@@ -1,0 +1,33 @@
+model EmailMessage {
+  id                  String    @id @default(uuid())
+  tenant_id           String
+  campaign_id         String?
+  mail_account_id     String?
+  message_id          String?
+  thread_id           String?
+  provider_thread_id  String?
+  provider_message_id String?
+  recipient_email     String?
+  subject             String?
+  body_html           String?
+  body_text           String?
+  direction           String?
+  status              String?
+  sent_at             DateTime?
+  delivered_at        DateTime?
+  opened_at           DateTime?
+  clicked_at          DateTime?
+  replied_at          DateTime?
+  bounce_reason       String?
+  raw_headers         String?
+  provider_response   Json?
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
+
+  tenant         Tenant         @relation(fields: [tenant_id], references: [id])
+  campaign       EmailCampaign? @relation(fields: [campaign_id], references: [id])
+  mailAccount    MailAccount?   @relation(fields: [mail_account_id], references: [id])
+  inboundReplies InboundReply[]
+  emailEvents    EmailEvent[]
+  bounceReports  BounceReport[]
+}

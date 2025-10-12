@@ -1,0 +1,13 @@
+model Activity {
+  id         String   @id @default(uuid())
+  tenant_id  String
+  user_id    String
+  contact_id String?
+  action     String?
+  metadata   Json?
+  created_at DateTime @default(now())
+
+  tenant  Tenant   @relation(fields: [tenant_id], references: [id])
+  user    User     @relation(fields: [user_id], references: [id])
+  contact Contact? @relation(fields: [contact_id], references: [id])
+}

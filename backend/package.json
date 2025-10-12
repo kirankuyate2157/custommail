@@ -7,7 +7,8 @@
     "dev": "ts-node-dev src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "gen": "node prisma/merge-models.js",
+    "merge-prisma": "node prisma/merge-models.js",
+    "split-prisma": "node prisma/split-models.js",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate"
   },

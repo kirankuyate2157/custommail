@@ -1,0 +1,15 @@
+model MailProvider {
+  id         String   @id @default(uuid())
+  name       String?
+  protocol   String?
+  auth_type  String?
+  smtp_host  String?
+  imap_host  String?
+  scopes     String[]
+  token_url  String?
+  docs_url   String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  mailAccounts MailAccount[]
+}
