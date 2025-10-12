@@ -1,4 +1,4 @@
-// mail.ts
+// mail.js
 import nodemailer from "nodemailer";
 
 export const transporter = nodemailer.createTransport({
@@ -11,6 +11,6 @@ export const transporter = nodemailer.createTransport({
     },
 });
 
-export const sendMail = async (to: string, subject: string, text: string) => {
+export const sendMail = async (to, subject, text) => {
     return transporter.sendMail({ from: process.env.MAIL_USER, to, subject, text });
 };

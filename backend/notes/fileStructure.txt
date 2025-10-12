@@ -1,74 +1,74 @@
 backend/
 ├─ src/
 │  ├─ config/
-│  │  ├─ db.ts
-│  │  ├─ env.ts
-│  │  ├─ mail.ts
-│  │  └─ logger.ts
+│  │  ├─ db.js
+│  │  ├─ env.js
+│  │  ├─ mail.js
+│  │  └─ logger.js
 │  ├─ controllers/
-│  │  ├─ auth.controller.ts
-│  │  ├─ user.controller.ts
-│  │  ├─ tenant.controller.ts
-│  │  ├─ email.controller.ts
-│  │  ├─ template.controller.ts
-│  │  ├─ campaign.controller.ts
-│  │  ├─ contact.controller.ts
-│  │  ├─ session.controller.ts
-│  │  └─ audit.controller.ts
+│  │  ├─ auth.controller.js
+│  │  ├─ user.controller.js
+│  │  ├─ tenant.controller.js
+│  │  ├─ email.controller.js
+│  │  ├─ template.controller.js
+│  │  ├─ campaign.controller.js
+│  │  ├─ contact.controller.js
+│  │  ├─ session.controller.js
+│  │  └─ audit.controller.js
 │  ├─ services/
-│  │  ├─ auth.service.ts
-│  │  ├─ user.service.ts
-│  │  ├─ tenant.service.ts
-│  │  ├─ email.service.ts
-│  │  ├─ template.service.ts
-│  │  ├─ campaign.service.ts
-│  │  ├─ contact.service.ts
-│  │  ├─ session.service.ts
-│  │  └─ audit.service.ts
+│  │  ├─ auth.service.js
+│  │  ├─ user.service.js
+│  │  ├─ tenant.service.js
+│  │  ├─ email.service.js
+│  │  ├─ template.service.js
+│  │  ├─ campaign.service.js
+│  │  ├─ contact.service.js
+│  │  ├─ session.service.js
+│  │  └─ audit.service.js
 │  ├─ repositories/
-│  │  ├─ user.repository.ts
-│  │  ├─ tenant.repository.ts
-│  │  ├─ email.repository.ts
-│  │  ├─ template.repository.ts
-│  │  ├─ campaign.repository.ts
-│  │  ├─ contact.repository.ts
-│  │  ├─ session.repository.ts
-│  │  └─ audit.repository.ts
+│  │  ├─ user.repository.js
+│  │  ├─ tenant.repository.js
+│  │  ├─ email.repository.js
+│  │  ├─ template.repository.js
+│  │  ├─ campaign.repository.js
+│  │  ├─ contact.repository.js
+│  │  ├─ session.repository.js
+│  │  └─ audit.repository.js
 │  ├─ middlewares/
-│  │  ├─ auth.middleware.ts
-│  │  ├─ role.middleware.ts
-│  │  ├─ tenant.middleware.ts
-│  │  ├─ error.middleware.ts
-│  │  └─ rateLimit.middleware.ts
+│  │  ├─ auth.middleware.js
+│  │  ├─ role.middleware.js
+│  │  ├─ tenant.middleware.js
+│  │  ├─ error.middleware.js
+│  │  └─ rateLimit.middleware.js
 │  ├─ routes/
-│  │  ├─ auth.routes.ts
-│  │  ├─ user.routes.ts
-│  │  ├─ tenant.routes.ts
-│  │  ├─ email.routes.ts
-│  │  ├─ template.routes.ts
-│  │  ├─ campaign.routes.ts
-│  │  ├─ contact.routes.ts
-│  │  ├─ session.routes.ts
-│  │  └─ audit.routes.ts
+│  │  ├─ auth.routes.js
+│  │  ├─ user.routes.js
+│  │  ├─ tenant.routes.js
+│  │  ├─ email.routes.js
+│  │  ├─ template.routes.js
+│  │  ├─ campaign.routes.js
+│  │  ├─ contact.routes.js
+│  │  ├─ session.routes.js
+│  │  └─ audit.routes.js
 │  ├─ utils/
-│  │  ├─ crypto.ts
-│  │  ├─ validator.ts
-│  │  ├─ date.ts
-│  │  └─ mailParser.ts
+│  │  ├─ crypto.js
+│  │  ├─ validator.js
+│  │  ├─ date.js
+│  │  └─ mailParser.js
 │  ├─ types/
-│  │  ├─ user.types.ts
-│  │  ├─ tenant.types.ts
-│  │  ├─ email.types.ts
-│  │  ├─ template.types.ts
-│  │  ├─ campaign.types.ts
-│  │  ├─ contact.types.ts
-│  │  └─ session.types.ts
+│  │  ├─ user.types.js
+│  │  ├─ tenant.types.js
+│  │  ├─ email.types.js
+│  │  ├─ template.types.js
+│  │  ├─ campaign.types.js
+│  │  ├─ contact.types.js
+│  │  └─ session.types.js
 │  ├─ jobs/
-│  │  ├─ campaignScheduler.ts
-│  │  ├─ emailSender.ts
-│  │  └─ cleanupJobs.ts
-│  ├─ app.ts
-│  └─ server.ts
+│  │  ├─ campaignScheduler.js
+│  │  ├─ emailSender.js
+│  │  └─ cleanupJobs.js
+│  ├─ app.js
+│  └─ server.js
 ├─ prisma/
 │  ├─ models/
 │  │  ├─ user.model.prisma
