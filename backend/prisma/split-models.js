@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { exec } from 'child_process';
 
 // __dirname replacement for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -60,3 +61,13 @@ if (enumMatches) {
 }
 
 console.log('Schema split into individual model files in `models/` folder.');
+
+// --- Run Prisma format on main schema.prisma ---
+exec('npx prisma format', { cwd: __dirname }, (err, stdout, stderr) => {
+  if (err) {
+    console.error('❌ Prisma format error:', err);
+    return;
+  }
+  if (stderr) console.error(stderr);
+  console.log('✅ Prisma schema formatted successfully.');
+});
