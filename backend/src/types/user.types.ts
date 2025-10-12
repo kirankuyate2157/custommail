@@ -8,7 +8,7 @@
 export interface CreateUserDto {
   name: string;
   email: string;
-  password: string;
+  password_hash: string;
   role?: "admin" | "user" | "manager"; // optional, can enforce roles
   tenantId?: string;
 }
@@ -17,7 +17,7 @@ export interface CreateUserDto {
 export interface UpdateUserDto {
   name?: string;
   email?: string;
-  password?: string;
+  password_hash?: string;
   role?: "admin" | "user" | "manager"; // optional, same as create
   isActive?: boolean;
 }
@@ -25,7 +25,7 @@ export interface UpdateUserDto {
 /** DTO for login request */
 export interface LoginDto {
   email: string;
-  password: string;
+  password_hash: string;
 }
 
 /** Auth payload returned after login */

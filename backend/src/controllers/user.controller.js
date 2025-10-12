@@ -1,9 +1,10 @@
 // src/controllers/user.controller.js
 import * as userService from "../services/user.service.js";
+import { registerSchema, loginSchema, updateUserSchema } from "../validators/user.validator.js";
 
 export const register = async (req, res, next) => {
   try {
-    const body = req.body;
+    const body = registerSchema.parse(req.body); // validate input
     const user = await userService.registerUser(body);
     res.status(201).json(user);
   } catch (err) {
@@ -13,7 +14,7 @@ export const register = async (req, res, next) => {
 
 export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password } = loginSchema.parse(req.body);
     const result = await userService.authenticate({ email, password });
     res.json(result);
   } catch (err) {
@@ -24,10 +25,10 @@ export const login = async (req, res, next) => {
 export const me = async (req, res, next) => {
   try {
     if (!req.user) return res.status(401).json({ message: "Unauthenticated" });
-    const u = await userService.getUserById(req.user.id);
-    if (!u) return res.status(404).json({ message: "User not found" });
-    if (u.password) delete u.password;
-    res.json(u);
+    const user = await userService.getUserById(req.user.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    delete user.password_hash;
+    res.json(user);
   } catch (err) {
     next(err);
   }
@@ -35,9 +36,9 @@ export const me = async (req, res, next) => {
 
 export const list = async (req, res, next) => {
   try {
-    const tenantId = req.query.tenantId;
+    const tenantId = req.query.tenantId || req.user.tenantId; // only allowed tenant
     const skip = Number(req.query.skip ?? 0);
-    const take = Number(req.query.take ?? 50);
+    const take = Math.min(Number(req.query.take ?? 50), 100); // max 100
     const users = await userService.getUsers(tenantId, skip, take);
     res.json(users);
   } catch (err) {
@@ -49,7 +50,7 @@ export const getOne = async (req, res, next) => {
   try {
     const user = await userService.getUserById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
-    if (user.password) delete user.password;
+    delete user.password_hash;
     res.json(user);
   } catch (err) {
     next(err);
@@ -58,7 +59,8 @@ export const getOne = async (req, res, next) => {
 
 export const update = async (req, res, next) => {
   try {
-    const updated = await userService.updateUserProfile(req.params.id, req.body);
+    const body = updateUserSchema.parse(req.body); // validate input
+    const updated = await userService.updateUserProfile(req.params.id, body);
     res.json(updated);
   } catch (err) {
     next(err);

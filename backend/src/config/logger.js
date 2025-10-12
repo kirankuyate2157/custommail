@@ -90,7 +90,7 @@ export const log = {
     logger.warn(args.map((arg) => (typeof arg === "object" ? JSON.stringify(arg, null, 2) : arg)).join(" ")),
   error: (...args) =>
     logger.error(args.map((arg) => (typeof arg === "object" ? JSON.stringify(arg, null, 2) : arg)).join(" ")),
-  raw: logger,
+  raw: (...args) => logger.error(...args), 
 };
 
 export default log;

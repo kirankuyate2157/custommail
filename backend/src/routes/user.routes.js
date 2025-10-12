@@ -6,11 +6,9 @@ import { permit } from "../middlewares/role.middleware.js";
 
 const router = Router();
 
-// Public
 router.post("/register", controller.register);
 router.post("/login", controller.login);
 
-// Protected
 router.get("/me", authMiddleware, controller.me);
 router.get("/", authMiddleware, permit("admin", "owner"), controller.list);
 router.get("/:id", authMiddleware, permit("admin", "owner"), controller.getOne);
