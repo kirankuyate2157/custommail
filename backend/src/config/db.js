@@ -7,6 +7,4 @@ const globalForPrisma = globalThis;
 const prisma = globalForPrisma.__PRISMA__ || new PrismaClient();
 globalForPrisma.__PRISMA__ = prisma;
 
-export const db = prisma;
-
-export default db;
+export default prisma;

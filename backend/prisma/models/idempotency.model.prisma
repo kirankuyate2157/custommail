@@ -1,0 +1,8 @@
+model Idempotency {
+  key         String   @id
+  namespace   String
+  response    Json?
+  statusCode  Int?
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+}

@@ -1,22 +1,97 @@
-// src/middlewares/auth.middleware.js
-import jwt from "jsonwebtoken";
-import { JWT_SECRET } from "../config/env.js";
-import { db } from "../config/db.js";
+// ============================================================================
+// 🔐 AUTH MIDDLEWARE
+// ----------------------------------------------------------------------------
+// Responsible for validating JWTs, attaching user & tenant info to request,
+// verifying token version (revocation check), and handling all auth cases.
+// ============================================================================
 
-export const authMiddleware = async (req, res, next) => {
+import { verifyAccessToken } from "../utils/auth.js";
+import prisma from "../config/db.js";
+
+/**
+ * Middleware to authenticate requests using JWT (Bearer token).
+ * Supports automatic user and tenant resolution.
+ *
+ * @param {import("express").Request} req
+ * @param {import("express").Response} res
+ * @param {import("express").NextFunction} next
+ */
+export async function authMiddleware(req, res, next) {
   try {
-    const raw = req.headers.authorization?.split(" ")[1];
-    if (!raw) return res.status(401).json({ message: "Missing token" });
+    const authHeader = req.headers.authorization;
 
-    const payload = jwt.verify(raw, JWT_SECRET);
+    // --------------------------- Missing Token ------------------------------
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        status: "error",
+        errors: [{ code: "unauthorized", message: "Missing or invalid Authorization header" }],
+      });
+    }
 
-    // attach minimal user info to req.user
-    const user = await db.user.findUnique({ where: { id: payload.userId } });
-    if (!user) return res.status(401).json({ message: "Invalid token" });
+    const token = authHeader.split(" ")[1];
+    const decoded = verifyAccessToken(token);
 
-    req.user = { id: user.id, tenantId: user.tenantId, role: user.role };
+    if (!decoded?.userId || !decoded?.tenantId) {
+      return res.status(401).json({
+        status: "error",
+        errors: [{ code: "invalid_payload", message: "Malformed token payload" }],
+      });
+    }
+
+    // --------------------------- Fetch User --------------------------------
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { id: true, status: true, tokenVersion: true, tenantId: true, role: true },
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        status: "error",
+        errors: [{ code: "invalid_user", message: "User not found" }],
+      });
+    }
+
+    // --------------------------- Check Active Status ------------------------
+    if (user.status !== "active") {
+      return res.status(403).json({
+        status: "error",
+        errors: [{ code: "inactive_user", message: "User is not active" }],
+      });
+    }
+
+    // --------------------------- Check Token Version ------------------------
+    if (decoded.tokenVersion !== undefined && decoded.tokenVersion !== user.tokenVersion) {
+      return res.status(401).json({
+        status: "error",
+        errors: [{ code: "token_revoked", message: "Token revoked or outdated" }],
+      });
+    }
+
+    // --------------------------- Attach Context -----------------------------
+    req.user = {
+      id: user.id,
+      tenantId: user.tenantId || decoded.tenantId,
+      role: user.role || decoded.role,
+    };
+
+    req.auth = decoded; // raw decoded payload if needed
+
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Invalid token" });
+    console.error("[authMiddleware] Token verification failed:", err.message);
+
+    return res.status(401).json({
+      status: "error",
+      errors: [
+        {
+          code: "invalid_token",
+          message:
+            err.name === "TokenExpiredError"
+              ? "Access token expired"
+              : "Invalid or malformed token",
+          detail: process.env.NODE_ENV === "development" ? err.message : undefined,
+        },
+      ],
+    });
   }
-};
+}
