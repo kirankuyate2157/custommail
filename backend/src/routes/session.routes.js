@@ -1,45 +1,27 @@
 // src/routes/session.routes.js
 import { Router } from "express";
 import {
-    createSession,
     refreshSession,
     revokeSession,
-    revokeAllSessionsForUser,
-    listUserSessions
+    getAllSessions,
+    getSessionLogs,
+
 } from "../controllers/session.controller.js";
 
-import { authorize } from "../middlewares/auth.middleware.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
 import { permit } from "../middlewares/role.middleware.js";
 
 export const sessionRouter = Router();
+// Get all sessions (with filters)
+sessionRouter.get("/", authenticate, getAllSessions);
 
-sessionRouter.post("/create", createSession);
-sessionRouter.post("/refresh", authorize(), refreshSession);
-sessionRouter.post(
-    "/revoke",
-    authorize(),
-    permit("user:session:revoke"),
-    revokeSession
-);
+// Revoke a specific session
+sessionRouter.post("/revoke/:id", authenticate, revokeSession);
 
-// ------------------------------
-// Revoke all sessions for a specific user (Admin-only)
-// ------------------------------
-sessionRouter.post(
-    "/revoke-all",
-    authorize(),
-    permit("admin:session:revoke_all"),
-    revokeAllSessionsForUser
-);
+sessionRouter.post("/refresh", authenticate, refreshSession);
+// Get session logs
+sessionRouter.get("/logs", authenticate, getSessionLogs);
 
-// ------------------------------
-// List sessions for a user
-// Users: only own sessions
-// Admin: can view any user's sessions
-// ------------------------------
-sessionRouter.get(
-    "/user/:user_id",
-    authorize(),
-    permit("user:session:read"),
-    listUserSessions
-);
+export default sessionRouter;
+
+

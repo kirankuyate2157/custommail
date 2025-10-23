@@ -92,7 +92,7 @@ export async function authenticate(req, res, next) {
     }
 
     // --------------------------- Check Active Status ------------------------
-    if (user.status !== "active") {
+    if (user?.status !== "active") {
       return res.status(403).json({
         status: "error",
         errors: [{ code: "inactive_user", message: "User is not active" }],

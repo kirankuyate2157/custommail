@@ -113,5 +113,52 @@ export const SessionService = {
             { id: session_id },
             { refresh_token: refreshToken }
         );
-    }
+    },
+    getAllSessions: async ({ user_id, session_id, tenant_id, search, status, page, limit }) => {
+        const skip = (page - 1) * limit;
+        const is_active = status === "active" ? true : status === "inactive" ? false : null;
+
+        // call repository
+        const { sessions, totalCount } = await SessionRepository.findSessions({
+            user_id,
+            session_id,
+            tenant_id,
+            search,
+            is_active,
+            skip,
+            limit,
+        });
+
+        const pagination = {
+            total: totalCount,
+            page,
+            limit,
+            totalPages: Math.ceil(totalCount / limit),
+        };
+
+        return { sessions, pagination };
+    },
+
+    getSessionLogs: async ({ user_id, session_id, tenant_id, search, action, page, limit }) => {
+        const skip = (page - 1) * limit;
+
+        const { logs, totalCount } = await SessionRepository.findSessionLogs({
+            user_id,
+            session_id,
+            tenant_id,
+            search,
+            action,
+            skip,
+            limit,
+        });
+
+        const pagination = {
+            total: totalCount,
+            page,
+            limit,
+            totalPages: Math.ceil(totalCount / limit),
+        };
+
+        return { logs, pagination };
+    },
 };

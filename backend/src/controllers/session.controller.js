@@ -2,31 +2,6 @@ import { SessionService } from "../services/session.service.js";
 import { log } from "../config/logger.js";
 
 /**
- * Create a new session (usually called after login/register)
- * Optionally returns JWTs or session object
- */
-export const createSession = async (req, res) => {
-    try {
-        const { user, tenant_id } = req.body; // from login/register
-        const device = req.body.device || {};
-
-        const session = await SessionService.createSession({ user, tenant_id, device, req });
-
-        return res.status(201).json({
-            status: "success",
-            data: session,
-            message: "Session created successfully",
-        });
-    } catch (err) {
-        log.error("Session creation failed:", err);
-        return res.status(err.status || 500).json({
-            status: "error",
-            message: err.message || "Internal server error",
-        });
-    }
-};
-
-/**
  * Refresh a session (extend expiry)
  */
 export const refreshSession = async (req, res) => {
@@ -53,8 +28,9 @@ export const refreshSession = async (req, res) => {
  */
 export const revokeSession = async (req, res) => {
     try {
-        const { session_id } = req.body;
-        const session = await SessionService.deactivateSession(session_id);
+        const { id } = req.params;
+        const user_id = req.auth?.user_id;
+        const session = await SessionService.deactivateSession(id);
 
         return res.status(200).json({
             status: "success",
@@ -70,44 +46,78 @@ export const revokeSession = async (req, res) => {
     }
 };
 
-/**
- * Revoke all sessions for a user (admin action or password reset)
- */
-export const revokeAllSessionsForUser = async (req, res) => {
-    try {
-        const { user_id } = req.body;
-        await SessionService.deactivateAllForUser(user_id);
-
-        return res.status(200).json({
-            status: "success",
-            message: `All sessions revoked for user ${user_id}`,
-        });
-    } catch (err) {
-        log.error("Bulk session revoke failed:", err);
-        return res.status(err.status || 500).json({
-            status: "error",
-            message: err.message || "Internal server error",
-        });
-    }
-};
 
 /**
  * List all active sessions for a user (optional admin or self view)
  */
-export const listUserSessions = async (req, res) => {
+export const getAllSessions = async (req, res) => {
     try {
-        const { user_id } = req.params;
-        const sessions = await SessionService.listSessionsForUser(user_id);
+        const {
+            user_id,
+            session_id,
+            tenant_id,
+            search,      // can be username, email, etc.
+            status = null,      // active/inactive
+            page = 1,
+            limit = 10,
+        } = req.query;
 
-        return res.status(200).json({
+        const result = await SessionService.getAllSessions({
+            user_id,
+            session_id,
+            tenant_id,
+            search,
+            status,
+            page: parseInt(page, 10),
+            limit: parseInt(limit, 10),
+        });
+
+        return res.json({
             status: "success",
-            data: sessions,
+            data: result.sessions,
+            pagination: result.pagination,
         });
-    } catch (err) {
-        log.error("Listing sessions failed:", err);
-        return res.status(err.status || 500).json({
-            status: "error",
-            message: err.message || "Internal server error",
-        });
+    } catch (error) {
+        log.raw("Error fetching sessions:", error);
+        return res
+            .status(500)
+            .json({ status: "error", message: "Internal server error" });
     }
+};
+
+
+/**
+ * List session logs with filters and pagination
+ */
+export const getSessionLogs = async (req, res) => {
+  try {
+    const {
+      user_id,
+      session_id,
+      tenant_id,
+      search,     // username or email
+      action,     // optional: logout, login, refresh etc.
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    const result = await SessionService.getSessionLogs({
+      user_id,
+      session_id,
+      tenant_id,
+      search,
+      action,
+      page: parseInt(page, 10),
+      limit: parseInt(limit, 10),
+    });
+
+    return res.json({
+      status: "success",
+      data: result.logs,
+      pagination: result.pagination,
+    });
+  } catch (err) {
+    log.raw("Error fetching session logs:", err);
+    return res.status(500).json({ status: "error", message: "Internal server error" });
+  }
 };
