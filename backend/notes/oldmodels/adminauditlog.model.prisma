@@ -1,0 +1,14 @@
+model AdminAuditLog {
+  id            String   @id @default(uuid())
+  admin_id      String?
+  tenant_id     String?
+  action        String?
+  resource_type String?
+  resource_id   String?
+  timestamp     DateTime @default(now())
+  status        String?
+  notes         String?
+
+  admin  User?   @relation(fields: [admin_id], references: [id])
+  tenant Tenant? @relation(fields: [tenant_id], references: [id])
+}

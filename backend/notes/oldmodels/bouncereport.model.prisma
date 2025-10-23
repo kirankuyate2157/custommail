@@ -1,0 +1,14 @@
+model BounceReport {
+  id              String    @id @default(uuid())
+  message_id      String
+  tenant_id       String
+  recipient_email String?
+  bounce_type     String?
+  bounce_subtype  String?
+  bounce_time     DateTime?
+  raw_response    String?
+  created_at      DateTime  @default(now())
+
+  message EmailMessage @relation(fields: [message_id], references: [id])
+  tenant  Tenant       @relation(fields: [tenant_id], references: [id])
+}

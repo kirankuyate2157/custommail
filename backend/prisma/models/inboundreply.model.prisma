@@ -1,16 +1,20 @@
 model InboundReply {
-  id                  String    @id @default(uuid())
-  mail_account_id     String
-  message_id          String
-  from_email          String?
-  to_email            String?
-  subject             String?
-  body_text           String?
-  body_html           String?
-  provider_message_id String?
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mail_account_id     String    @db.Uuid
+  message_id          String    @db.Uuid
+  from_email          String?   @db.VarChar(255)
+  to_email            String?   @db.VarChar(255)
+  subject             String?   @db.VarChar(512)
+  body_text           String?   @db.Text
+  body_html           String?   @db.Text
+  provider_message_id String?   @db.VarChar(255)
   reply_time          DateTime?
-  created_at          DateTime  @default(now())
+  created_at          DateTime  @default(now()) @db.Timestamp(6)
 
   mailAccount MailAccount  @relation(fields: [mail_account_id], references: [id])
   message     EmailMessage @relation(fields: [message_id], references: [id])
+
+  @@index([mail_account_id])
+  @@index([message_id])
+  @@index([from_email])
 }

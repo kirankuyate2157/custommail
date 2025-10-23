@@ -1,17 +1,20 @@
 model EmailTemplate {
-  id           String   @id @default(uuid())
-  tenant_id    String
-  name         String?
-  subject      String?
-  body_html    String?
-  body_text    String?
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id    String   @db.Uuid
+  name         String?  @db.VarChar(255)
+  subject      String?  @db.VarChar(512)
+  body_html    String?  @db.Text
+  body_text    String?  @db.Text
   placeholders Json?
-  created_by   String?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  created_by   String?  @db.Uuid
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  updated_at   DateTime @updatedAt @db.Timestamp(6)
 
   tenant         Tenant            @relation(fields: [tenant_id], references: [id])
-  createdBy      User?             @relation(fields: [created_by], references: [id])
+  createdBy      Users?            @relation(fields: [created_by], references: [user_id])
   versions       TemplateVersion[]
   emailCampaigns EmailCampaign[]
+
+  @@index([tenant_id])
+  @@index([name])
 }

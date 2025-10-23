@@ -16,32 +16,72 @@ import prisma from "../config/db.js";
  * @param {import("express").Response} res
  * @param {import("express").NextFunction} next
  */
-export async function authMiddleware(req, res, next) {
+import { clearAuthCookies } from "../utils/cookie.util.js";
+import { SessionRepository } from "../repositories/session.repository.js";
+
+export async function authenticate(req, res, next) {
   try {
+    let token = null;
+    // 1️⃣ Try Authorization header
     const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    }
+
+    // 2️⃣ Fallback to cookie
+    if (!token && req.cookies?.access_token) {
+      token = req.cookies.access_token;
+    }
 
     // --------------------------- Missing Token ------------------------------
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+
+    if (!token) {
       return res.status(401).json({
         status: "error",
-        errors: [{ code: "unauthorized", message: "Missing or invalid Authorization header" }],
+        errors: [
+          { code: "unauthorized", message: "No token provided (header or cookie)" },
+        ],
       });
     }
 
-    const token = authHeader.split(" ")[1];
     const decoded = verifyAccessToken(token);
-
-    if (!decoded?.userId || !decoded?.tenantId) {
+    if (!decoded?.user_id || !decoded?.tenant_id) {
       return res.status(401).json({
         status: "error",
-        errors: [{ code: "invalid_payload", message: "Malformed token payload" }],
+        errors: [
+          { code: "invalid_payload", message: "Malformed token payload" },
+        ],
       });
     }
+    if (decoded?.session_id) {
+      let session = await SessionRepository.findById(decoded.session_id);
+      if (!session || session?.user_id !== decoded?.user_id || session?.tenant_id !== decoded?.tenant_id || session?.expires_at < new Date() || !session.is_active) {
 
+        clearAuthCookies(res);
+        return res.status(401).json({
+          status: "error",
+          errors: [
+            { code: "invalid_session", message: "Session is invalid or has expired" },
+          ],
+        });
+      }
+    } else {
+      return res.status(401).json({
+        status: "error",
+        errors: [
+          { code: "invalid_session", message: "Session is invalid or not found!" },
+        ],
+      });
+    }
     // --------------------------- Fetch User --------------------------------
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, status: true, tokenVersion: true, tenantId: true, role: true },
+    const user = await prisma.users.findUnique({
+      where: { user_id: decoded?.user_id },
+      select: {
+        user_id: true,
+        status: true,
+        tenant_id: true,
+        role: true,
+      },
     });
 
     if (!user) {
@@ -60,18 +100,23 @@ export async function authMiddleware(req, res, next) {
     }
 
     // --------------------------- Check Token Version ------------------------
-    if (decoded.tokenVersion !== undefined && decoded.tokenVersion !== user.tokenVersion) {
+    if (
+      decoded.tokenVersion !== undefined &&
+      decoded.tokenVersion !== user.tokenVersion
+    ) {
       return res.status(401).json({
         status: "error",
-        errors: [{ code: "token_revoked", message: "Token revoked or outdated" }],
+        errors: [
+          { code: "token_revoked", message: "Token revoked or outdated" },
+        ],
       });
     }
 
     // --------------------------- Attach Context -----------------------------
     req.user = {
-      id: user.id,
-      tenantId: user.tenantId || decoded.tenantId,
-      role: user.role || decoded.role,
+      user_id: user?.user_id,
+      tenant_id: user?.tenant_id || decoded?.tenant_id,
+      role: user?.role || decoded?.role,
     };
 
     req.auth = decoded; // raw decoded payload if needed
@@ -89,7 +134,8 @@ export async function authMiddleware(req, res, next) {
             err.name === "TokenExpiredError"
               ? "Access token expired"
               : "Invalid or malformed token",
-          detail: process.env.NODE_ENV === "development" ? err.message : undefined,
+          detail:
+            process.env.NODE_ENV === "development" ? err.message : undefined,
         },
       ],
     });

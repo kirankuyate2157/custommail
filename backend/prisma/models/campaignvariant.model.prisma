@@ -1,12 +1,15 @@
 model CampaignVariant {
-  id          String   @id @default(uuid())
-  campaign_id String
-  variant_key String?
-  subject     String?
-  body_html   String?
-  body_text   String?
-  created_at  DateTime @default(now())
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaign_id String   @db.Uuid
+  variant_key String?  @db.VarChar(100)
+  subject     String?  @db.VarChar(255)
+  body_html   String?  @db.Text
+  body_text   String?  @db.Text
+  created_at  DateTime @default(now()) @db.Timestamp(6)
 
   campaign   EmailCampaign       @relation(fields: [campaign_id], references: [id])
   recipients CampaignRecipient[]
+
+  @@index([campaign_id])
+  @@index([variant_key])
 }

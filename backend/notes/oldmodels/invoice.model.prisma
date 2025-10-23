@@ -1,0 +1,11 @@
+model Invoice {
+  id             String    @id @default(uuid())
+  tenant_id      String
+  amount         Decimal?
+  status         String?
+  billing_period String?
+  issued_at      DateTime  @default(now())
+  paid_at        DateTime?
+
+  tenant Tenant @relation(fields: [tenant_id], references: [id])
+}

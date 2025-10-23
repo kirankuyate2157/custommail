@@ -1,12 +1,14 @@
 model TemplateVersion {
-  id          String   @id @default(uuid())
-  template_id String
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  template_id String   @db.Uuid
   version_no  Int?
-  name        String?
-  subject     String?
-  body_html   String?
-  body_text   String?
-  created_at  DateTime @default(now())
+  name        String?  @db.VarChar(255)
+  subject     String?  @db.VarChar(512)
+  body_html   String?  @db.Text
+  body_text   String?  @db.Text
+  created_at  DateTime @default(now()) @db.Timestamp(6)
 
   template EmailTemplate @relation(fields: [template_id], references: [id])
+
+  @@index([template_id])
 }

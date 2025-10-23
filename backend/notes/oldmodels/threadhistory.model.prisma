@@ -1,0 +1,11 @@
+model ThreadHistory {
+  id               String    @id @default(uuid())
+  thread_key       String?
+  tenant_id        String
+  last_sync_at     DateTime?
+  messages_summary Json?
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenant_id], references: [id])
+}

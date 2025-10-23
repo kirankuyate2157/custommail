@@ -1,15 +1,16 @@
 model SessionLog {
-  id         String   @id @default(uuid())
-  session_id String
-  event      String?  @db.VarChar(100) 
-  provider   String?  @db.VarChar(50) 
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  session_id String?  @db.Uuid
+  event      String?  @db.VarChar(100)
+  provider   String?  @db.VarChar(50)
   ip_address String?  @db.VarChar(100)
   user_agent String?  @db.Text
-  details    Json? 
-  created_at DateTime @default(now())
+  details    Json?
+  created_at DateTime @default(now()) @db.Timestamp(6)
 
-  session Session @relation(fields: [session_id], references: [id])
+  session Session? @relation(fields: [session_id], references: [id])
 
   @@index([session_id])
   @@index([event])
+  @@index([created_at])
 }

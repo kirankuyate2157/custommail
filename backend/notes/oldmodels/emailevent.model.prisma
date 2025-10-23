@@ -1,0 +1,13 @@
+model EmailEvent {
+  id                    String    @id @default(uuid())
+  message_id            String
+  campaign_recipient_id String?
+  event_type            String?
+  event_time            DateTime?
+  ip_address            String?
+  user_agent            String?
+  metadata              Json?
+
+  message           EmailMessage       @relation(fields: [message_id], references: [id])
+  campaignRecipient CampaignRecipient? @relation(fields: [campaign_recipient_id], references: [id])
+}

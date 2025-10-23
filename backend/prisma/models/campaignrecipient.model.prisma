@@ -1,12 +1,12 @@
 model CampaignRecipient {
-  id                     String    @id @default(uuid())
-  campaign_id            String
-  contact_id             String?
-  email_address          String?
-  variant_id             String?
-  delivery_status        String?
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaign_id            String    @db.Uuid
+  contact_id             String?   @db.Uuid
+  email_address          String?   @db.VarChar(255)
+  variant_id             String?   @db.Uuid
+  delivery_status        String?   @db.VarChar(50)
   delivery_time          DateTime?
-  bounce_reason          String?
+  bounce_reason          String?   @db.VarChar(255)
   retry_count            Int?      @default(0)
   open_count             Int?      @default(0)
   first_open_time        DateTime?
@@ -14,21 +14,26 @@ model CampaignRecipient {
   click_count            Int?      @default(0)
   last_click_time        DateTime?
   clicked_links          Json?
-  reply_status           String?
+  reply_status           String?   @db.VarChar(50)
   reply_time             DateTime?
-  reply_message_id       String?
+  reply_message_id       String?   @db.Uuid
   unsubscribed           Boolean?  @default(false)
   unsubscribed_time      DateTime?
-  gdpr_consent_status    String?
+  gdpr_consent_status    String?   @db.VarChar(50)
   engagement_score       Int?      @default(0)
-  personalized_subject   String?
+  personalized_subject   String?   @db.VarChar(255)
   personalized_body_hash String?
-  processing_status      String?
-  created_at             DateTime  @default(now())
-  updated_at             DateTime  @updatedAt
+  processing_status      String?   @db.VarChar(50)
+  created_at             DateTime  @default(now()) @db.Timestamp(6)
+  updated_at             DateTime  @updatedAt @db.Timestamp(6)
 
   campaign    EmailCampaign    @relation(fields: [campaign_id], references: [id])
   contact     Contact?         @relation(fields: [contact_id], references: [id])
   variant     CampaignVariant? @relation(fields: [variant_id], references: [id])
   emailEvents EmailEvent[]
+
+  @@index([campaign_id])
+  @@index([contact_id])
+  @@index([email_address])
+  @@index([delivery_status])
 }

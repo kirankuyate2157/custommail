@@ -1,27 +1,31 @@
 model Contact {
-  id           String   @id @default(uuid())
-  tenant_id    String
-  pronouns     String?
-  full_name    String?
-  email        String?
-  phone        String?
-  job_title    String?
-  company_name String?
-  linkedin_url String?
-  other_url    String?
-  form_url     String?
-  location     String?
-  source       String?
-  added_by     String?
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id    String   @db.Uuid
+  pronouns     String?  @db.VarChar(50)
+  full_name    String?  @db.VarChar(255)
+  email        String?  @db.VarChar(255)
+  phone        String?  @db.VarChar(30)
+  job_title    String?  @db.VarChar(150)
+  company_name String?  @db.VarChar(255)
+  linkedin_url String?  @db.VarChar(512)
+  other_url    String?  @db.VarChar(512)
+  form_url     String?  @db.VarChar(512)
+  location     String?  @db.VarChar(255)
+  source       String?  @db.VarChar(100)
+  added_by     String?  @db.Uuid
   tags         Json?
-  notes        String?
+  notes        String?  @db.Text
   verified     Boolean  @default(false)
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  updated_at   DateTime @updatedAt @db.Timestamp(6)
 
   tenant             Tenant              @relation(fields: [tenant_id], references: [id])
-  addedBy            User?               @relation("AddedBy", fields: [added_by], references: [id])
+  addedBy            Users?              @relation("AddedBy", fields: [added_by], references: [user_id])
   importContacts     ImportContact[]
   campaignRecipients CampaignRecipient[]
   activities         Activity[]
+
+  @@index([tenant_id])
+  @@index([email])
+  @@index([phone])
 }

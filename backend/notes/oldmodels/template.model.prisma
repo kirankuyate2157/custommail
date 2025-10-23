@@ -1,0 +1,13 @@
+// template model prisma
+model Template {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  subject   String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  emails    Email[]
+}

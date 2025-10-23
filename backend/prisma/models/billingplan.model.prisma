@@ -1,9 +1,18 @@
 model BillingPlan {
-  id               String   @id @default(uuid())
-  name             String?
-  monthly_fee      Decimal?
-  per_email_charge Decimal?
-  limits           Json?
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @unique @db.VarChar(150)
+  description String?  @db.Text
+  plan_type   String?  @default("BASIC") @db.VarChar(50)
+  monthly_fee Decimal  @default(0) @db.Decimal(18, 2)
+  yearly_fee  Decimal? @default(0) @db.Decimal(18, 2)
+  currency    String?  @default("USD") @db.VarChar(10)
+  limits      Json?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @updatedAt @db.Timestamp(6)
+
+  tenantBillings TenantBilling[]
+
+  @@index([is_active])
+  @@index([plan_type])
 }

@@ -1,0 +1,17 @@
+model MailServer {
+  id                 String   @id @default(uuid())
+  tenant_id          String
+  name               String?
+  host               String?
+  port               Int?
+  tls                Boolean?
+  username           String?
+  encrypted_password String?
+  description        String?
+  is_default         Boolean? @default(false)
+  status             String?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenant_id], references: [id])
+}

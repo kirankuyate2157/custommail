@@ -1,14 +1,17 @@
 model TenantPolicy {
-  id                       String   @id @default(uuid())
-  tenant_id                String
-  allow_custom_smtp        Boolean? @default(false)
-  max_mailboxes            Int?     @default(1)
-  storage_limit_mb         Int?     @default(1024)
-  allow_external_providers Boolean? @default(true)
-  allow_auto_sync          Boolean? @default(true)
-  created_by               String?
-  updated_at               DateTime @updatedAt
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id        String   @db.Uuid
+  storage_limit_mb Int?     @default(1024)
+  allow_auto_sync  Boolean? @default(true)
+  max_sessions     Int      @default(5)
+  session_expiry   Int      @default(168)
+  idle_timeout     Int      @default(60)
+  enforce_2fa      Boolean  @default(false)
+  created_by       String?  @db.Uuid
+  updated_at       DateTime @updatedAt @db.Timestamp(6)
 
-  tenant    Tenant @relation(fields: [tenant_id], references: [id])
-  createdBy User?  @relation(fields: [created_by], references: [id])
+  tenant        Tenant @relation(fields: [tenant_id], references: [id])
+  createdByUser Users? @relation(fields: [created_by], references: [user_id])
+
+  @@index([tenant_id])
 }

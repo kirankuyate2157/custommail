@@ -1,7 +1,7 @@
 // src/server.js
 import app from "./app.js";
 import { PORT } from "./config/env.js";
-import { db } from "./config/db.js";
+import db from "./config/db.js";
 import { log } from "./config/logger.js";
 
 async function main() {

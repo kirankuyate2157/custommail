@@ -1,0 +1,17 @@
+model EmailTemplate {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  name         String?
+  subject      String?
+  body_html    String?
+  body_text    String?
+  placeholders Json?
+  created_by   String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  tenant         Tenant            @relation(fields: [tenant_id], references: [id])
+  createdBy      User?             @relation(fields: [created_by], references: [id])
+  versions       TemplateVersion[]
+  emailCampaigns EmailCampaign[]
+}

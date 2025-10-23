@@ -1,0 +1,27 @@
+model Contact {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  pronouns     String?
+  full_name    String?
+  email        String?
+  phone        String?
+  job_title    String?
+  company_name String?
+  linkedin_url String?
+  other_url    String?
+  form_url     String?
+  location     String?
+  source       String?
+  added_by     String?
+  tags         Json?
+  notes        String?
+  verified     Boolean  @default(false)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  tenant             Tenant              @relation(fields: [tenant_id], references: [id])
+  addedBy            User?               @relation("AddedBy", fields: [added_by], references: [id])
+  importContacts     ImportContact[]
+  campaignRecipients CampaignRecipient[]
+  activities         Activity[]
+}

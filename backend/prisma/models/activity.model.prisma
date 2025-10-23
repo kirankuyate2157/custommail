@@ -1,13 +1,18 @@
 model Activity {
-  id         String   @id @default(uuid())
-  tenant_id  String
-  user_id    String
-  contact_id String?
-  action     String?
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id  String   @db.Uuid
+  user_id    String   @db.Uuid
+  contact_id String?  @db.Uuid
+  action     String?  @db.VarChar(150)
   metadata   Json?
-  created_at DateTime @default(now())
+  created_at DateTime @default(now()) @db.Timestamp(6)
 
   tenant  Tenant   @relation(fields: [tenant_id], references: [id])
-  user    User     @relation(fields: [user_id], references: [id])
+  user    Users    @relation(fields: [user_id], references: [user_id])
   contact Contact? @relation(fields: [contact_id], references: [id])
+
+  @@index([tenant_id])
+  @@index([user_id])
+  @@index([contact_id])
+  @@index([action])
 }

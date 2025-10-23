@@ -1,17 +1,23 @@
-// email model prisma
 model Email {
-  id          String     @id @default(cuid())
-  userId      String
-  tenantId    String
-  subject     String
-  body        String
-  status      String     @default("draft") // draft, sent, failed
-  sentAt      DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id         String    @id @default(cuid())
+  user_id    String    @db.Uuid
+  tenant_id  String    @db.Uuid
+  subject    String    @db.VarChar(512)
+  body       String    @db.Text
+  status     String    @default("draft") @db.VarChar(50) // draft, sent, failed
+  sent_at    DateTime?
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @updatedAt @db.Timestamp(6)
 
-  user        User       @relation(fields: [userId], references: [id])
-  tenant      Tenant     @relation(fields: [tenantId], references: [id])
-  templates   Template[]
-  audits      Audit[]
+  user   Users  @relation(fields: [user_id], references: [user_id])
+  tenant Tenant @relation(fields: [tenant_id], references: [id])
+
+  templates  Template[]
+  Campaign   Campaign?  @relation(fields: [campaignId], references: [id])
+  campaignId String?
+
+  @@index([tenant_id])
+  @@index([user_id])
+  @@index([status])
+  @@index([subject, body])
 }

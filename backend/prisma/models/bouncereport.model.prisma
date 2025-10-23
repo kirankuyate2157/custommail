@@ -1,14 +1,18 @@
 model BounceReport {
-  id              String    @id @default(uuid())
-  message_id      String
-  tenant_id       String
-  recipient_email String?
-  bounce_type     String?
-  bounce_subtype  String?
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message_id      String    @db.Uuid
+  tenant_id       String    @db.Uuid
+  recipient_email String?   @db.VarChar(255)
+  bounce_type     String?   @db.VarChar(100)
+  bounce_subtype  String?   @db.VarChar(100)
   bounce_time     DateTime?
-  raw_response    String?
-  created_at      DateTime  @default(now())
+  raw_response    String?   @db.Text
+  created_at      DateTime  @default(now()) @db.Timestamp(6)
 
   message EmailMessage @relation(fields: [message_id], references: [id])
   tenant  Tenant       @relation(fields: [tenant_id], references: [id])
+
+  @@index([tenant_id])
+  @@index([message_id])
+  @@index([recipient_email])
 }

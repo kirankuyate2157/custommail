@@ -1,27 +1,32 @@
 model MailAccount {
-  id                      String    @id @default(uuid())
-  tenant_id               String
-  user_id                 String
-  provider_id             String?
-  email_address           String?
-  display_name            String?
-  access_type             String?
-  encrypted_access_token  String?
-  encrypted_refresh_token String?
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id               String    @db.Uuid
+  user_id                 String    @db.Uuid
+  provider_id             String?   @db.Uuid
+  email_address           String?   @db.VarChar(255)
+  display_name            String?   @db.VarChar(255)
+  access_type             String?   @db.VarChar(50)
+  encrypted_access_token  String?   @db.Text
+  encrypted_refresh_token String?   @db.Text
   token_expires_at        DateTime?
-  smtp_username           String?
-  encrypted_smtp_password String?
+  smtp_username           String?   @db.VarChar(255)
+  encrypted_smtp_password String?   @db.Text
   imap_settings           Json?
   is_primary              Boolean   @default(false)
-  status                  String?
+  status                  String?   @db.VarChar(50)
   last_connected_at       DateTime?
-  created_at              DateTime  @default(now())
-  updated_at              DateTime  @updatedAt
+  created_at              DateTime  @default(now()) @db.Timestamp(6)
+  updated_at              DateTime  @updatedAt @db.Timestamp(6)
 
   tenant         Tenant         @relation(fields: [tenant_id], references: [id])
-  user           User           @relation(fields: [user_id], references: [id])
+  user           Users          @relation(fields: [user_id], references: [user_id])
   provider       MailProvider?  @relation(fields: [provider_id], references: [id])
   syncAudits     SyncAudit[]
   inboundReplies InboundReply[]
   emailMessages  EmailMessage[]
+
+  @@index([tenant_id])
+  @@index([user_id])
+  @@index([email_address])
+  @@index([is_primary])
 }

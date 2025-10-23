@@ -1,0 +1,14 @@
+model TenantPolicy {
+  id                       String   @id @default(uuid())
+  tenant_id                String
+  allow_custom_smtp        Boolean? @default(false)
+  max_mailboxes            Int?     @default(1)
+  storage_limit_mb         Int?     @default(1024)
+  allow_external_providers Boolean? @default(true)
+  allow_auto_sync          Boolean? @default(true)
+  created_by               String?
+  updated_at               DateTime @updatedAt
+
+  tenant    Tenant @relation(fields: [tenant_id], references: [id])
+  createdBy User?  @relation(fields: [created_by], references: [id])
+}

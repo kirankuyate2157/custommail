@@ -1,3 +1,4 @@
+// prisma/schema.prisma
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -7,109 +8,154 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ---------- Helpers / Notes ----------
+// - UUID defaults use gen_random_uuid() (pgcrypto). If you prefer uuid_generate_v4() from uuid-ossp,
+//   change dbgenerated("gen_random_uuid()") -> dbgenerated("uuid_generate_v4()").
+// - Timestamps use precision 6 for consistency.
+// - Decimal fields use precision (18,2) unless otherwise noted.
+// -------------------------------------
+
 model Activity {
-  id         String   @id @default(uuid())
-  tenant_id  String
-  user_id    String
-  contact_id String?
-  action     String?
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id  String   @db.Uuid
+  user_id    String   @db.Uuid
+  contact_id String?  @db.Uuid
+  action     String?  @db.VarChar(150)
   metadata   Json?
-  created_at DateTime @default(now())
+  created_at DateTime @default(now()) @db.Timestamp(6)
 
   tenant  Tenant   @relation(fields: [tenant_id], references: [id])
-  user    User     @relation(fields: [user_id], references: [id])
+  user    Users    @relation(fields: [user_id], references: [user_id])
   contact Contact? @relation(fields: [contact_id], references: [id])
+
+  @@index([tenant_id])
+  @@index([user_id])
+  @@index([contact_id])
+  @@index([action])
 }
 
 model AdminAuditLog {
-  id            String   @id @default(uuid())
-  admin_id      String?
-  tenant_id     String?
-  action        String?
-  resource_type String?
-  resource_id   String?
-  timestamp     DateTime @default(now())
-  status        String?
-  notes         String?
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  admin_id      String?  @db.Uuid
+  tenant_id     String?  @db.Uuid
+  action        String?  @db.VarChar(150)
+  resource_type String?  @db.VarChar(150)
+  resource_id   String?  @db.VarChar(255)
+  timestamp     DateTime @default(now()) @db.Timestamp(6)
+  status        String?  @db.VarChar(50)
+  notes         String?  @db.Text
 
-  admin  User?   @relation(fields: [admin_id], references: [id])
+  admin  Users?  @relation(fields: [admin_id], references: [user_id])
   tenant Tenant? @relation(fields: [tenant_id], references: [id])
+
+  @@index([tenant_id])
+  @@index([admin_id])
+  @@index([timestamp])
 }
 
-// audit model prisma
-model Audit {
-  id        String   @id @default(cuid())
-  userId    String
-  emailId   String?
-  action    String
-  createdAt DateTime @default(now())
+model AppConfig {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key         String   @unique @db.VarChar(255)
+  value       String   @db.Text
+  description String?  @db.Text
+  tenant_id   String?  @db.Uuid
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @updatedAt @db.Timestamp(6)
 
-  user  User   @relation(fields: [userId], references: [id])
-  email Email? @relation(fields: [emailId], references: [id])
+  tenant Tenant? @relation(fields: [tenant_id], references: [id])
+
+  @@index([tenant_id])
 }
 
-model AuditLog {
-  id          String   @id @default(uuid())
-  tenant_id   String
-  user_id     String?
-  action      String?
-  target_type String?
-  target_id   String?
-  ip_address  String?
-  details     Json?
-  created_at  DateTime @default(now())
+model AuditLogs {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String   @db.Uuid
+  user_id     String   @db.Uuid
+  actor_role  String?  @db.VarChar(50)
+  module      String?  @db.VarChar(100)
+  action      String   @db.VarChar(50)
+  target_type String?  @db.VarChar(100)
+  target_id   String?  @db.VarChar(255)
+  status      String?  @db.VarChar(50)
+  ip_address  String?  @db.VarChar(100)
+  user_agent  String?  @db.Text
+  description String?  @db.VarChar(500)
+  metadata    Json?
+  created_at  DateTime @default(now()) @db.Timestamp(6)
 
   tenant Tenant @relation(fields: [tenant_id], references: [id])
-  user   User?  @relation(fields: [user_id], references: [id])
+  user   Users  @relation(fields: [user_id], references: [user_id])
+
+  @@index([tenant_id])
+  @@index([user_id])
+  @@index([module])
+  @@index([action])
+  @@index([created_at])
+  @@index([target_type, target_id])
 }
 
 model BillingPlan {
-  id               String   @id @default(uuid())
-  name             String?
-  monthly_fee      Decimal?
-  per_email_charge Decimal?
-  limits           Json?
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @unique @db.VarChar(150)
+  description String?  @db.Text
+  plan_type   String?  @default("BASIC") @db.VarChar(50)
+  monthly_fee Decimal  @default(0) @db.Decimal(18, 2)
+  yearly_fee  Decimal? @default(0) @db.Decimal(18, 2)
+  currency    String?  @default("USD") @db.VarChar(10)
+  limits      Json?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @updatedAt @db.Timestamp(6)
+
+  tenantBillings TenantBilling[]
+
+  @@index([is_active])
+  @@index([plan_type])
 }
 
 model BounceReport {
-  id              String    @id @default(uuid())
-  message_id      String
-  tenant_id       String
-  recipient_email String?
-  bounce_type     String?
-  bounce_subtype  String?
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message_id      String    @db.Uuid
+  tenant_id       String    @db.Uuid
+  recipient_email String?   @db.VarChar(255)
+  bounce_type     String?   @db.VarChar(100)
+  bounce_subtype  String?   @db.VarChar(100)
   bounce_time     DateTime?
-  raw_response    String?
-  created_at      DateTime  @default(now())
+  raw_response    String?   @db.Text
+  created_at      DateTime  @default(now()) @db.Timestamp(6)
 
   message EmailMessage @relation(fields: [message_id], references: [id])
   tenant  Tenant       @relation(fields: [tenant_id], references: [id])
+
+  @@index([tenant_id])
+  @@index([message_id])
+  @@index([recipient_email])
 }
 
-// campaign model prisma
 model Campaign {
-  id        String   @id @default(cuid())
-  tenantId  String
-  name      String
-  status    String   @default("draft") // draft, running, completed
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  tenant_id  String   @db.Uuid
+  name       String   @db.VarChar(255)
+  status     String   @default("draft") @db.VarChar(50) // draft, running, completed
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @updatedAt @db.Timestamp(6)
 
-  tenant Tenant  @relation(fields: [tenantId], references: [id])
+  tenant Tenant  @relation(fields: [tenant_id], references: [id])
   emails Email[]
+
+  @@index([tenant_id])
+  @@index([status])
 }
 
 model CampaignRecipient {
-  id                     String    @id @default(uuid())
-  campaign_id            String
-  contact_id             String?
-  email_address          String?
-  variant_id             String?
-  delivery_status        String?
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaign_id            String    @db.Uuid
+  contact_id             String?   @db.Uuid
+  email_address          String?   @db.VarChar(255)
+  variant_id             String?   @db.Uuid
+  delivery_status        String?   @db.VarChar(50)
   delivery_time          DateTime?
-  bounce_reason          String?
+  bounce_reason          String?   @db.VarChar(255)
   retry_count            Int?      @default(0)
   open_count             Int?      @default(0)
   first_open_time        DateTime?
@@ -117,165 +163,189 @@ model CampaignRecipient {
   click_count            Int?      @default(0)
   last_click_time        DateTime?
   clicked_links          Json?
-  reply_status           String?
+  reply_status           String?   @db.VarChar(50)
   reply_time             DateTime?
-  reply_message_id       String?
+  reply_message_id       String?   @db.Uuid
   unsubscribed           Boolean?  @default(false)
   unsubscribed_time      DateTime?
-  gdpr_consent_status    String?
+  gdpr_consent_status    String?   @db.VarChar(50)
   engagement_score       Int?      @default(0)
-  personalized_subject   String?
+  personalized_subject   String?   @db.VarChar(255)
   personalized_body_hash String?
-  processing_status      String?
-  created_at             DateTime  @default(now())
-  updated_at             DateTime  @updatedAt
+  processing_status      String?   @db.VarChar(50)
+  created_at             DateTime  @default(now()) @db.Timestamp(6)
+  updated_at             DateTime  @updatedAt @db.Timestamp(6)
 
   campaign    EmailCampaign    @relation(fields: [campaign_id], references: [id])
   contact     Contact?         @relation(fields: [contact_id], references: [id])
   variant     CampaignVariant? @relation(fields: [variant_id], references: [id])
   emailEvents EmailEvent[]
+
+  @@index([campaign_id])
+  @@index([contact_id])
+  @@index([email_address])
+  @@index([delivery_status])
 }
 
 model CampaignVariant {
-  id          String   @id @default(uuid())
-  campaign_id String
-  variant_key String?
-  subject     String?
-  body_html   String?
-  body_text   String?
-  created_at  DateTime @default(now())
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaign_id String   @db.Uuid
+  variant_key String?  @db.VarChar(100)
+  subject     String?  @db.VarChar(255)
+  body_html   String?  @db.Text
+  body_text   String?  @db.Text
+  created_at  DateTime @default(now()) @db.Timestamp(6)
 
   campaign   EmailCampaign       @relation(fields: [campaign_id], references: [id])
   recipients CampaignRecipient[]
+
+  @@index([campaign_id])
+  @@index([variant_key])
 }
 
 model Contact {
-  id           String   @id @default(uuid())
-  tenant_id    String
-  pronouns     String?
-  full_name    String?
-  email        String?
-  phone        String?
-  job_title    String?
-  company_name String?
-  linkedin_url String?
-  other_url    String?
-  form_url     String?
-  location     String?
-  source       String?
-  added_by     String?
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id    String   @db.Uuid
+  pronouns     String?  @db.VarChar(50)
+  full_name    String?  @db.VarChar(255)
+  email        String?  @db.VarChar(255)
+  phone        String?  @db.VarChar(30)
+  job_title    String?  @db.VarChar(150)
+  company_name String?  @db.VarChar(255)
+  linkedin_url String?  @db.VarChar(512)
+  other_url    String?  @db.VarChar(512)
+  form_url     String?  @db.VarChar(512)
+  location     String?  @db.VarChar(255)
+  source       String?  @db.VarChar(100)
+  added_by     String?  @db.Uuid
   tags         Json?
-  notes        String?
+  notes        String?  @db.Text
   verified     Boolean  @default(false)
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  updated_at   DateTime @updatedAt @db.Timestamp(6)
 
   tenant             Tenant              @relation(fields: [tenant_id], references: [id])
-  addedBy            User?               @relation("AddedBy", fields: [added_by], references: [id])
+  addedBy            Users?              @relation("AddedBy", fields: [added_by], references: [user_id])
   importContacts     ImportContact[]
   campaignRecipients CampaignRecipient[]
   activities         Activity[]
+
+  @@index([tenant_id])
+  @@index([email])
+  @@index([phone])
 }
 
-// email model prisma
 model Email {
-  id        String    @id @default(cuid())
-  userId    String
-  tenantId  String
-  subject   String
-  body      String
-  status    String    @default("draft") // draft, sent, failed
-  sentAt    DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  user_id    String    @db.Uuid
+  tenant_id  String    @db.Uuid
+  subject    String    @db.VarChar(512)
+  body       String    @db.Text
+  status     String    @default("draft") @db.VarChar(50) // draft, sent, failed
+  sent_at    DateTime?
+  created_at DateTime  @default(now()) @db.Timestamp(6)
+  updated_at DateTime  @updatedAt @db.Timestamp(6)
 
-  user       User       @relation(fields: [userId], references: [id])
-  tenant     Tenant     @relation(fields: [tenantId], references: [id])
+  user   Users  @relation(fields: [user_id], references: [user_id])
+  tenant Tenant @relation(fields: [tenant_id], references: [id])
+
   templates  Template[]
-  audits     Audit[]
   Campaign   Campaign?  @relation(fields: [campaignId], references: [id])
   campaignId String?
+
+  @@index([tenant_id])
+  @@index([user_id])
+  @@index([status])
+  @@index([subject, body])
 }
 
 model EmailCampaign {
-  id                    String    @id @default(uuid())
-  tenant_id             String
-  created_by            String?
-  campaign_name         String?
-  description           String?
-  template_id           String?
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id             String    @db.Uuid
+  created_by            String?   @db.Uuid
+  campaign_name         String?   @db.VarChar(255)
+  description           String?   @db.Text
+  template_id           String?   @db.Uuid
   template_snapshot     Json?
-  email_subject         String?
-  email_body_html       String?
-  email_body_text       String?
-  contact_list_ids      String[]
+  email_subject         String?   @db.VarChar(512)
+  email_body_html       String?   @db.Text
+  email_body_text       String?   @db.Text
+  contact_list_ids      String[] // store ids as array of uuids or list names
   segment_rules         Json?
   final_recipient_count Int?
-  from_name             String?
-  from_email            String?
-  reply_to_email        String?
-  sending_domain        String?
-  schedule_type         String?
+  from_name             String?   @db.VarChar(200)
+  from_email            String?   @db.VarChar(255)
+  reply_to_email        String?   @db.VarChar(255)
+  sending_domain        String?   @db.VarChar(255)
+  schedule_type         String?   @db.VarChar(50)
   schedule_time         DateTime?
   throttle_rate         Int?
   batch_size            Int?
-  tracking_enabled      Boolean?
-  track_opens           Boolean?
-  track_clicks          Boolean?
-  unsubscribe_link      String?
+  tracking_enabled      Boolean?  @default(true)
+  track_opens           Boolean?  @default(true)
+  track_clicks          Boolean?  @default(true)
+  unsubscribe_link      String?   @db.VarChar(512)
   custom_utm_params     Json?
-  status                String?
-  created_at            DateTime  @default(now())
-  updated_at            DateTime  @updatedAt
+  status                String?   @db.VarChar(50)
+  created_at            DateTime  @default(now()) @db.Timestamp(6)
+  updated_at            DateTime  @updatedAt @db.Timestamp(6)
 
   tenant        Tenant              @relation(fields: [tenant_id], references: [id])
-  createdBy     User?               @relation(fields: [created_by], references: [id])
+  createdBy     Users?              @relation(fields: [created_by], references: [user_id])
   template      EmailTemplate?      @relation(fields: [template_id], references: [id])
   variants      CampaignVariant[]
   recipients    CampaignRecipient[]
   emailMessages EmailMessage[]
   trackingLinks TrackingLink[]
+
+  @@index([tenant_id])
+  @@index([status])
+  @@index([created_at])
 }
 
 model EmailEvent {
-  id                    String    @id @default(uuid())
-  message_id            String
-  campaign_recipient_id String?
-  event_type            String?
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message_id            String    @db.Uuid
+  campaign_recipient_id String?   @db.Uuid
+  event_type            String?   @db.VarChar(100)
   event_time            DateTime?
-  ip_address            String?
-  user_agent            String?
+  ip_address            String?   @db.VarChar(100)
+  user_agent            String?   @db.Text
   metadata              Json?
 
   message           EmailMessage       @relation(fields: [message_id], references: [id])
   campaignRecipient CampaignRecipient? @relation(fields: [campaign_recipient_id], references: [id])
+
+  @@index([message_id])
+  @@index([campaign_recipient_id])
+  @@index([event_type])
 }
 
 model EmailMessage {
-  id                  String    @id @default(uuid())
-  tenant_id           String
-  campaign_id         String?
-  mail_account_id     String?
-  message_id          String?
-  thread_id           String?
-  provider_thread_id  String?
-  provider_message_id String?
-  recipient_email     String?
-  subject             String?
-  body_html           String?
-  body_text           String?
-  direction           String?
-  status              String?
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id           String    @db.Uuid
+  campaign_id         String?   @db.Uuid
+  mail_account_id     String?   @db.Uuid
+  message_id          String?   @db.VarChar(255)
+  thread_id           String?   @db.VarChar(255)
+  provider_thread_id  String?   @db.VarChar(255)
+  provider_message_id String?   @db.VarChar(255)
+  recipient_email     String?   @db.VarChar(255)
+  subject             String?   @db.VarChar(512)
+  body_html           String?   @db.Text
+  body_text           String?   @db.Text
+  direction           String?   @db.VarChar(50)
+  status              String?   @db.VarChar(50)
   sent_at             DateTime?
   delivered_at        DateTime?
   opened_at           DateTime?
   clicked_at          DateTime?
   replied_at          DateTime?
-  bounce_reason       String?
-  raw_headers         String?
+  bounce_reason       String?   @db.VarChar(255)
+  raw_headers         String?   @db.Text
   provider_response   Json?
-  created_at          DateTime  @default(now())
-  updated_at          DateTime  @updatedAt
+  created_at          DateTime  @default(now()) @db.Timestamp(6)
+  updated_at          DateTime  @updatedAt @db.Timestamp(6)
 
   tenant         Tenant         @relation(fields: [tenant_id], references: [id])
   campaign       EmailCampaign? @relation(fields: [campaign_id], references: [id])
@@ -283,185 +353,273 @@ model EmailMessage {
   inboundReplies InboundReply[]
   emailEvents    EmailEvent[]
   bounceReports  BounceReport[]
+
+  @@index([tenant_id])
+  @@index([recipient_email])
+  @@index([provider_message_id])
+  @@index([created_at])
+}
+
+model EmailOutbox {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id    String?   @db.Uuid
+  user_id      String?   @db.Uuid
+  to           String    @db.VarChar(255)
+  cc           String?   @db.Text
+  bcc          String?   @db.Text
+  subject      String    @db.VarChar(255)
+  body         String    @db.Text
+  attachments  Json?
+  is_sent      Boolean   @default(false)
+  sent_at      DateTime? @db.Timestamp(6)
+  scheduled_at DateTime? @db.Timestamp(6)
+  attempts     Int       @default(0)
+  last_attempt DateTime? @db.Timestamp(6)
+  created_at   DateTime  @default(now()) @db.Timestamp(6)
+  updated_at   DateTime  @updatedAt @db.Timestamp(6)
+
+  tenant Tenant? @relation(fields: [tenant_id], references: [id])
+  user   Users?  @relation(fields: [user_id], references: [user_id])
+
+  @@index([is_sent])
+  @@index([scheduled_at])
+  @@index([tenant_id])
+  @@index([user_id])
+  @@index([to])
 }
 
 model EmailTemplate {
-  id           String   @id @default(uuid())
-  tenant_id    String
-  name         String?
-  subject      String?
-  body_html    String?
-  body_text    String?
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id    String   @db.Uuid
+  name         String?  @db.VarChar(255)
+  subject      String?  @db.VarChar(512)
+  body_html    String?  @db.Text
+  body_text    String?  @db.Text
   placeholders Json?
-  created_by   String?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  created_by   String?  @db.Uuid
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  updated_at   DateTime @updatedAt @db.Timestamp(6)
 
   tenant         Tenant            @relation(fields: [tenant_id], references: [id])
-  createdBy      User?             @relation(fields: [created_by], references: [id])
+  createdBy      Users?            @relation(fields: [created_by], references: [user_id])
   versions       TemplateVersion[]
   emailCampaigns EmailCampaign[]
+
+  @@index([tenant_id])
+  @@index([name])
+}
+
+model Idempotency {
+  key         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  namespace   String    @db.VarChar(255)
+  status_code Int?
+  response    Json?
+  headers     Json?
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime? @db.Timestamp(6)
+
+  @@index([namespace])
+  @@index([status_code])
+  @@index([created_at])
 }
 
 model Import {
-  id          String   @id @default(uuid())
-  tenant_id   String
-  uploaded_by String?
-  filename    String?
-  source_type String?
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String   @db.Uuid
+  uploaded_by String?  @db.Uuid
+  filename    String?  @db.VarChar(255)
+  source_type String?  @db.VarChar(100)
   metadata    Json?
-  created_at  DateTime @default(now())
+  created_at  DateTime @default(now()) @db.Timestamp(6)
 
   tenant         Tenant          @relation(fields: [tenant_id], references: [id])
-  uploadedBy     User?           @relation("UploadedBy", fields: [uploaded_by], references: [id])
+  uploadedBy     Users?          @relation("UploadedBy", fields: [uploaded_by], references: [user_id])
   importContacts ImportContact[]
+
+  @@index([tenant_id])
+  @@index([uploaded_by])
 }
 
 model ImportContact {
-  id            String  @id @default(uuid())
-  import_id     String
-  contact_id    String
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  import_id     String  @db.Uuid
+  contact_id    String  @db.Uuid
   row_index     Int?
-  status        String?
-  error_message String?
+  status        String? @db.VarChar(50)
+  error_message String? @db.Text
 
   import  Import  @relation(fields: [import_id], references: [id])
   contact Contact @relation(fields: [contact_id], references: [id])
+
+  @@index([import_id])
+  @@index([contact_id])
 }
 
 model InboundReply {
-  id                  String    @id @default(uuid())
-  mail_account_id     String
-  message_id          String
-  from_email          String?
-  to_email            String?
-  subject             String?
-  body_text           String?
-  body_html           String?
-  provider_message_id String?
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mail_account_id     String    @db.Uuid
+  message_id          String    @db.Uuid
+  from_email          String?   @db.VarChar(255)
+  to_email            String?   @db.VarChar(255)
+  subject             String?   @db.VarChar(512)
+  body_text           String?   @db.Text
+  body_html           String?   @db.Text
+  provider_message_id String?   @db.VarChar(255)
   reply_time          DateTime?
-  created_at          DateTime  @default(now())
+  created_at          DateTime  @default(now()) @db.Timestamp(6)
 
   mailAccount MailAccount  @relation(fields: [mail_account_id], references: [id])
   message     EmailMessage @relation(fields: [message_id], references: [id])
+
+  @@index([mail_account_id])
+  @@index([message_id])
+  @@index([from_email])
 }
 
 model Invoice {
-  id             String    @id @default(uuid())
-  tenant_id      String
-  amount         Decimal?
-  status         String?
-  billing_period String?
-  issued_at      DateTime  @default(now())
-  paid_at        DateTime?
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_billing_id String    @db.Uuid
+  amount            Decimal   @db.Decimal(18, 2)
+  currency          String?   @default("USD") @db.VarChar(10)
+  status            String    @default("PAID") @db.VarChar(50)
+  invoice_date      DateTime  @default(now()) @db.Timestamp(6)
+  due_date          DateTime?
+  paid_date         DateTime?
+  payment_ref       String?   @db.VarChar(255)
+  metadata          Json?
+  created_at        DateTime  @default(now()) @db.Timestamp(6)
 
-  tenant Tenant @relation(fields: [tenant_id], references: [id])
+  tenantBilling TenantBilling @relation(fields: [tenant_billing_id], references: [id])
+  Tenant        Tenant?       @relation(fields: [tenantId], references: [id])
+  tenantId      String?       @db.Uuid
+
+  @@index([tenant_billing_id])
+  @@index([status])
+  @@index([invoice_date])
 }
 
 model MailAccount {
-  id                      String    @id @default(uuid())
-  tenant_id               String
-  user_id                 String
-  provider_id             String?
-  email_address           String?
-  display_name            String?
-  access_type             String?
-  encrypted_access_token  String?
-  encrypted_refresh_token String?
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id               String    @db.Uuid
+  user_id                 String    @db.Uuid
+  provider_id             String?   @db.Uuid
+  email_address           String?   @db.VarChar(255)
+  display_name            String?   @db.VarChar(255)
+  access_type             String?   @db.VarChar(50)
+  encrypted_access_token  String?   @db.Text
+  encrypted_refresh_token String?   @db.Text
   token_expires_at        DateTime?
-  smtp_username           String?
-  encrypted_smtp_password String?
+  smtp_username           String?   @db.VarChar(255)
+  encrypted_smtp_password String?   @db.Text
   imap_settings           Json?
   is_primary              Boolean   @default(false)
-  status                  String?
+  status                  String?   @db.VarChar(50)
   last_connected_at       DateTime?
-  created_at              DateTime  @default(now())
-  updated_at              DateTime  @updatedAt
+  created_at              DateTime  @default(now()) @db.Timestamp(6)
+  updated_at              DateTime  @updatedAt @db.Timestamp(6)
 
   tenant         Tenant         @relation(fields: [tenant_id], references: [id])
-  user           User           @relation(fields: [user_id], references: [id])
+  user           Users          @relation(fields: [user_id], references: [user_id])
   provider       MailProvider?  @relation(fields: [provider_id], references: [id])
   syncAudits     SyncAudit[]
   inboundReplies InboundReply[]
   emailMessages  EmailMessage[]
+
+  @@index([tenant_id])
+  @@index([user_id])
+  @@index([email_address])
+  @@index([is_primary])
 }
 
 model MailProvider {
-  id         String   @id @default(uuid())
-  name       String?
-  protocol   String?
-  auth_type  String?
-  smtp_host  String?
-  imap_host  String?
-  scopes     String[]
-  token_url  String?
-  docs_url   String?
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String?  @db.VarChar(100)
+  protocol   String?  @db.VarChar(50)
+  auth_type  String?  @db.VarChar(50)
+  smtp_host  String?  @db.VarChar(255)
+  imap_host  String?  @db.VarChar(255)
+  scopes     String[] // array of scopes
+  token_url  String?  @db.VarChar(512)
+  docs_url   String?  @db.VarChar(512)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @updatedAt @db.Timestamp(6)
 
   mailAccounts MailAccount[]
+
+  @@index([name])
 }
 
 model MailServer {
-  id                 String   @id @default(uuid())
-  tenant_id          String
-  name               String?
-  host               String?
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id          String   @db.Uuid
+  name               String?  @db.VarChar(150)
+  host               String?  @db.VarChar(255)
   port               Int?
   tls                Boolean?
-  username           String?
-  encrypted_password String?
-  description        String?
+  username           String?  @db.VarChar(255)
+  encrypted_password String?  @db.Text
+  description        String?  @db.Text
   is_default         Boolean? @default(false)
-  status             String?
-  created_at         DateTime @default(now())
-  updated_at         DateTime @updatedAt
+  status             String?  @db.VarChar(50)
+  created_at         DateTime @default(now()) @db.Timestamp(6)
+  updated_at         DateTime @updatedAt @db.Timestamp(6)
 
   tenant Tenant @relation(fields: [tenant_id], references: [id])
+
+  @@index([tenant_id])
+  @@index([host])
+  @@index([is_default])
 }
 
 model Role {
-  id          String   @id @default(uuid())
-  tenant_id   String
-  name        String?
-  description String?
-  created_at  DateTime @default(now())
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String   @db.Uuid
+  name        String?  @db.VarChar(255)
+  description String?  @db.Text
+  created_at  DateTime @default(now()) @db.Timestamp(6)
 
   tenant      Tenant           @relation(fields: [tenant_id], references: [id])
   permissions RolePermission[]
+
+  @@index([tenant_id])
+  @@index([name])
+  @@index([created_at])
 }
 
 model RolePermission {
-  id             String   @id @default(uuid())
-  role_id        String
-  permission_key String?
-  created_at     DateTime @default(now())
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  role_id        String   @db.Uuid
+  permission_key String?  @db.VarChar(255)
+  created_at     DateTime @default(now()) @db.Timestamp(6)
 
   role Role @relation(fields: [role_id], references: [id])
+
+  @@index([role_id])
+  @@index([permission_key])
+  @@index([created_at])
 }
 
 model Session {
-  id             String    @id @default(uuid())
-  user_id        String
-  tenant_id      String
-  device_id      String?   @db.VarChar(255) // Unique device identifier (web, mobile, etc.)
-  device_type    String?   @db.VarChar(100) // e.g., 'web', 'android', 'ios', 'desktop'
-  device_name    String?   @db.VarChar(255) // Human-readable device name
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id        String    @db.Uuid
+  tenant_id      String    @db.Uuid
+  device_id      String?   @db.VarChar(255)
+  device_type    String?   @db.VarChar(100)
+  device_name    String?   @db.VarChar(255)
   ip_address     String?   @db.VarChar(100)
-  user_agent     String?   @db.Text // Browser or app info
-  location       Json? // Optional: geo-info (country, city, lat, lon)
-  created_at     DateTime  @default(now())
-  last_active_at DateTime? @default(now()) // Updated on every API request
-  expires_at     DateTime? // Optional: session expiry
-  revoked_at     DateTime? // When the session was explicitly logged out
+  user_agent     String?   @db.Text
+  location       Json?
+  created_at     DateTime  @default(now()) @db.Timestamp(6)
+  last_active_at DateTime? @default(now()) @db.Timestamp(6)
+  expires_at     DateTime?
+  revoked_at     DateTime?
   is_active      Boolean   @default(true)
-  refresh_token  String?   @db.Text // Hashed refresh token for session (if applicable)
-  token_version  Int       @default(0) // For refresh token rotation/invalidation
-  provider       String?   @db.VarChar(50) // e.g., 'local', 'google', 'github'
-  meta           Json? // Any additional session metadata
+  refresh_token  String?   @db.Text
+  token_version  Int       @default(0)
+  provider       String?   @db.VarChar(50)
+  meta           Json?
 
-  // Relations
-  user   User         @relation(fields: [user_id], references: [id])
+  user   Users        @relation(fields: [user_id], references: [user_id])
   tenant Tenant       @relation(fields: [tenant_id], references: [id])
   logs   SessionLog[]
 
@@ -469,204 +627,262 @@ model Session {
   @@index([tenant_id])
   @@index([is_active])
   @@index([device_id])
+  @@index([created_at])
+  @@index([last_active_at])
 }
 
 model SessionLog {
-  id         String   @id @default(uuid())
-  session_id String
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  session_id String?  @db.Uuid
   event      String?  @db.VarChar(100)
   provider   String?  @db.VarChar(50)
   ip_address String?  @db.VarChar(100)
   user_agent String?  @db.Text
   details    Json?
-  created_at DateTime @default(now())
+  created_at DateTime @default(now()) @db.Timestamp(6)
 
-  session Session @relation(fields: [session_id], references: [id])
+  session Session? @relation(fields: [session_id], references: [id])
 
   @@index([session_id])
   @@index([event])
+  @@index([created_at])
 }
 
 model SyncAudit {
-  id              String    @id @default(uuid())
-  mail_account_id String
-  tenant_id       String
-  user_id         String
-  operation       String?
-  status          String?
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  mail_account_id String    @db.Uuid
+  tenant_id       String    @db.Uuid
+  user_id         String    @db.Uuid
+  operation       String?   @db.VarChar(100)
+  status          String?   @db.VarChar(50)
   started_at      DateTime?
   finished_at     DateTime?
   details         Json?
 
   mailAccount MailAccount @relation(fields: [mail_account_id], references: [id])
   tenant      Tenant      @relation(fields: [tenant_id], references: [id])
-  user        User        @relation(fields: [user_id], references: [id])
+  user        Users       @relation(fields: [user_id], references: [user_id])
+
+  @@index([mail_account_id])
+  @@index([tenant_id])
+  @@index([user_id])
 }
 
-// template model prisma
 model Template {
-  id        String   @id @default(cuid())
-  tenantId  String
-  name      String
-  subject   String
-  body      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  tenant_id  String   @db.Uuid
+  name       String   @db.VarChar(255)
+  subject    String   @db.VarChar(512)
+  body       String   @db.Text
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  updated_at DateTime @updatedAt @db.Timestamp(6)
 
-  tenant Tenant  @relation(fields: [tenantId], references: [id])
+  tenant Tenant  @relation(fields: [tenant_id], references: [id])
   emails Email[]
+
+  @@index([tenant_id])
+  @@index([name])
 }
 
 model TemplateVersion {
-  id          String   @id @default(uuid())
-  template_id String
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  template_id String   @db.Uuid
   version_no  Int?
-  name        String?
-  subject     String?
-  body_html   String?
-  body_text   String?
-  created_at  DateTime @default(now())
+  name        String?  @db.VarChar(255)
+  subject     String?  @db.VarChar(512)
+  body_html   String?  @db.Text
+  body_text   String?  @db.Text
+  created_at  DateTime @default(now()) @db.Timestamp(6)
 
   template EmailTemplate @relation(fields: [template_id], references: [id])
+
+  @@index([template_id])
 }
 
 model Tenant {
-  id                    String   @id @default(uuid())
-  name                  String
-  domain                String?  @unique
-  plan_type             String?
-  status                String?
-  default_admin_user_id String?  @unique
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                  String   @db.VarChar(255)
+  domain                String?  @unique @db.VarChar(255)
+  plan_type             String?  @db.VarChar(50)
+  status                String?  @db.VarChar(50)
+  default_admin_user_id String?  @db.Uuid
   storage_limit_mb      Int?     @default(0)
-  created_at            DateTime @default(now())
-  updated_at            DateTime @updatedAt
+  created_at            DateTime @default(now()) @db.Timestamp(6)
+  updated_at            DateTime @updatedAt @db.Timestamp(6)
 
-  users          User[]
+  Users          Users[]
   userOrgMap     UserOrgMap[]
   roles          Role[]
   sessions       Session[]
-  auditLogs      AuditLog[]
-  adminAuditLogs AdminAuditLog[]
+  emailOutbox    EmailOutbox[]
+  auditLogs      AuditLogs[]
+  tenantPolicies TenantPolicy[]
+  tenantBillings TenantBilling[]
+  appConfigs     AppConfig[]
   mailAccounts   MailAccount[]
   mailServers    MailServer[]
-  syncAudits     SyncAudit[]
-  contacts       Contact[]
   imports        Import[]
-  emailTemplates EmailTemplate[]
-  emailCampaigns EmailCampaign[]
-  threadHistory  ThreadHistory[]
-  trackingLinks  TrackingLink[]
-  usageRecords   UsageRecord[]
+  syncAudits     SyncAudit[]
   invoices       Invoice[]
-  // tenantPolicies         TenantPolicy?
-  activities     Activity[]
-
-  adminUser      User?          @relation("TenantAdmin", fields: [default_admin_user_id], references: [id])
+  bounceReports  BounceReport[]
+  templates      Template[]
+  emailCampaigns EmailCampaign[]
   emailMessages  EmailMessage[]
-  bounceReports  BounceReport[] // for proper reverse relation
-  tenantPolicies TenantPolicy[] // change to one-to-many
-  Campaign       Campaign[]
-  Email          Email[]
-  Template       Template[]
+  contacts       Contact[]
+
+  adminUser     Users?          @relation("TenantAdmin", fields: [default_admin_user_id], references: [user_id])
+  activities    Activity[]
+  AdminAuditLog AdminAuditLog[]
+  Campaign      Campaign[]
+  Email         Email[]
+  EmailTemplate EmailTemplate[]
+  ThreadHistory ThreadHistory[]
+  TrackingLink  TrackingLink[]
+  UsageRecord   UsageRecord[]
+
+  @@index([name])
+  @@index([status])
+}
+
+model TenantBilling {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id       String    @db.Uuid
+  billing_plan_id String    @db.Uuid
+  start_date      DateTime  @default(now()) @db.Timestamp(6)
+  end_date        DateTime?
+  renewal_date    DateTime?
+  status          String    @default("ACTIVE") @db.VarChar(50)
+  payment_status  String    @default("PAID") @db.VarChar(50)
+  payment_method  String?   @db.VarChar(50)
+  last_invoice_id String?   @db.VarChar(255)
+  auto_renew      Boolean   @default(true)
+  usage_metrics   Json?
+  created_at      DateTime  @default(now()) @db.Timestamp(6)
+  updated_at      DateTime  @updatedAt @db.Timestamp(6)
+
+  tenant      Tenant      @relation(fields: [tenant_id], references: [id])
+  billingPlan BillingPlan @relation(fields: [billing_plan_id], references: [id])
+  invoices    Invoice[]
+
+  @@unique([tenant_id, billing_plan_id])
+  @@index([tenant_id])
+  @@index([billing_plan_id])
+  @@index([status])
 }
 
 model TenantPolicy {
-  id                       String   @id @default(uuid())
-  tenant_id                String
-  allow_custom_smtp        Boolean? @default(false)
-  max_mailboxes            Int?     @default(1)
-  storage_limit_mb         Int?     @default(1024)
-  allow_external_providers Boolean? @default(true)
-  allow_auto_sync          Boolean? @default(true)
-  created_by               String?
-  updated_at               DateTime @updatedAt
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id        String   @db.Uuid
+  storage_limit_mb Int?     @default(1024)
+  allow_auto_sync  Boolean? @default(true)
+  max_sessions     Int      @default(5)
+  session_expiry   Int      @default(168)
+  idle_timeout     Int      @default(60)
+  enforce_2fa      Boolean  @default(false)
+  created_by       String?  @db.Uuid
+  updated_at       DateTime @updatedAt @db.Timestamp(6)
 
-  tenant    Tenant @relation(fields: [tenant_id], references: [id])
-  createdBy User?  @relation(fields: [created_by], references: [id])
+  tenant        Tenant @relation(fields: [tenant_id], references: [id])
+  createdByUser Users? @relation(fields: [created_by], references: [user_id])
+
+  @@index([tenant_id])
 }
 
 model ThreadHistory {
-  id               String    @id @default(uuid())
-  thread_key       String?
-  tenant_id        String
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  thread_key       String?   @db.VarChar(255)
+  tenant_id        String    @db.Uuid
   last_sync_at     DateTime?
   messages_summary Json?
-  created_at       DateTime  @default(now())
-  updated_at       DateTime  @updatedAt
+  created_at       DateTime  @default(now()) @db.Timestamp(6)
+  updated_at       DateTime  @updatedAt @db.Timestamp(6)
 
   tenant Tenant @relation(fields: [tenant_id], references: [id])
+
+  @@index([tenant_id])
+  @@index([thread_key])
 }
 
 model TrackingLink {
-  id           String   @id @default(uuid())
-  tenant_id    String
-  campaign_id  String?
-  original_url String?
-  tracking_url String?
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id    String   @db.Uuid
+  campaign_id  String?  @db.Uuid
+  original_url String?  @db.VarChar(2048)
+  tracking_url String?  @db.VarChar(2048)
   clicks_count Int?     @default(0)
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  updated_at   DateTime @updatedAt @db.Timestamp(6)
 
   tenant   Tenant         @relation(fields: [tenant_id], references: [id])
   campaign EmailCampaign? @relation(fields: [campaign_id], references: [id])
+
+  @@index([tenant_id])
+  @@index([campaign_id])
+  @@index([tracking_url])
 }
 
 model UsageRecord {
-  id                 String   @id @default(uuid())
-  tenant_id          String
-  period             String?
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id          String   @db.Uuid
+  period             String?  @db.VarChar(50)
   email_sent_count   Int?     @default(0)
   email_opened_count Int?     @default(0)
-  charge_amount      Decimal?
-  generated_at       DateTime @default(now())
+  charge_amount      Decimal? @db.Decimal(18, 2)
+  generated_at       DateTime @default(now()) @db.Timestamp(6)
 
   tenant Tenant @relation(fields: [tenant_id], references: [id])
+
+  @@index([tenant_id])
+  @@index([period])
 }
 
-model User {
-  id            String    @id @default(uuid())
-  tenant_id     String?
-  email         String    @unique
-  full_name     String?
-  username      String?
-  password_hash String?
-  auth_provider String?
-  role          String?
-  status        String?
+model Users {
+  user_id       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id     String?   @db.Uuid
+  email         String    @unique @db.VarChar(255)
+  full_name     String?   @db.VarChar(255)
+  username      String?   @unique @db.VarChar(100)
+  password_hash String?   @db.VarChar(255)
+  auth_provider String?   @db.VarChar(50)
+  role          String?   @default("user") @db.VarChar(50)
+  status        String?   @db.VarChar(50)
   last_login_at DateTime?
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  access_token  String?
-  refresh_token String?
-  ip_address    String?
-  user_agent    String?
+  created_at    DateTime  @default(now()) @db.Timestamp(6)
+  updated_at    DateTime  @updatedAt @db.Timestamp(6)
 
-  tenant          Tenant?         @relation(fields: [tenant_id], references: [id])
-  userOrgMap      UserOrgMap[]
-  sessions        Session[]
-  auditLogs       AuditLog[]
-  adminAuditLogs  AdminAuditLog[]
-  mailAccounts    MailAccount[]
-  syncAudits      SyncAudit[]
-  contactsAdded   Contact[]       @relation("AddedBy")
-  importsUploaded Import[]        @relation("UploadedBy")
-  emailTemplates  EmailTemplate[]
-  emailCampaigns  EmailCampaign[]
-  tenantPolicies  TenantPolicy[]
-  activities      Activity[]
+  tenant           Tenant?         @relation(fields: [tenant_id], references: [id])
+  userOrgMap       UserOrgMap[]
+  sessions         Session[]
+  adminAuditLogs   AdminAuditLog[]
+  mailAccounts     MailAccount[]
+  syncAudits       SyncAudit[]
+  contacts_added   Contact[]       @relation("AddedBy")
+  imports_uploaded Import[]        @relation("UploadedBy")
+  emailTemplates   EmailTemplate[]
+  emailCampaigns   EmailCampaign[]
+  tenantPolicies   TenantPolicy[]
+  activities       Activity[]
+  tenantAdminOf    Tenant[]        @relation("TenantAdmin")
+  AuditLogs        AuditLogs[]
+  Email            Email[]
+  EmailOutbox      EmailOutbox[]
 
-  tenantAdminOf Tenant[] @relation("TenantAdmin")
-  Audit         Audit[]
-  Email         Email[]
+  @@index([email])
+  @@index([tenant_id])
+  @@index([role])
 }
 
 model UserOrgMap {
-  id          String   @id @default(uuid())
-  user_id     String
-  tenant_id   String
-  role_in_org String?
-  created_at  DateTime @default(now())
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id     String   @db.Uuid
+  tenant_id   String   @db.Uuid
+  role_in_org String?  @db.VarChar(50)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
 
-  user   User   @relation(fields: [user_id], references: [id])
+  user   Users  @relation(fields: [user_id], references: [user_id])
   tenant Tenant @relation(fields: [tenant_id], references: [id])
+
+  @@unique([user_id, tenant_id])
+  @@index([tenant_id])
+  @@index([user_id])
 }

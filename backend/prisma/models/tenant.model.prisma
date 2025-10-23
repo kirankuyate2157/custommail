@@ -1,36 +1,44 @@
 model Tenant {
-  id                    String   @id @default(uuid())
-  name                  String
-  domain                String?  @unique
-  plan_type             String?
-  status                String?
-  default_admin_user_id String?  @unique
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                  String   @db.VarChar(255)
+  domain                String?  @unique @db.VarChar(255)
+  plan_type             String?  @db.VarChar(50)
+  status                String?  @db.VarChar(50)
+  default_admin_user_id String?  @db.Uuid
   storage_limit_mb      Int?     @default(0)
-  created_at            DateTime @default(now())
-  updated_at            DateTime @updatedAt
+  created_at            DateTime @default(now()) @db.Timestamp(6)
+  updated_at            DateTime @updatedAt @db.Timestamp(6)
 
-  users          User[]
+  Users          Users[]
   userOrgMap     UserOrgMap[]
   roles          Role[]
   sessions       Session[]
-  auditLogs      AuditLog[]
-  adminAuditLogs AdminAuditLog[]
+  emailOutbox    EmailOutbox[]
+  auditLogs      AuditLogs[]
+  tenantPolicies TenantPolicy[]
+  tenantBillings TenantBilling[]
+  appConfigs     AppConfig[]
   mailAccounts   MailAccount[]
   mailServers    MailServer[]
-  syncAudits     SyncAudit[]
-  contacts       Contact[]
   imports        Import[]
-  emailTemplates EmailTemplate[]
-  emailCampaigns EmailCampaign[]
-  threadHistory  ThreadHistory[]
-  trackingLinks  TrackingLink[]
-  usageRecords   UsageRecord[]
+  syncAudits     SyncAudit[]
   invoices       Invoice[]
-  // tenantPolicies         TenantPolicy?
-  activities     Activity[]
-
-  adminUser      User?          @relation("TenantAdmin", fields: [default_admin_user_id], references: [id])
+  bounceReports  BounceReport[]
+  templates      Template[]
+  emailCampaigns EmailCampaign[]
   emailMessages  EmailMessage[]
-  bounceReports  BounceReport[] // for proper reverse relation
-  tenantPolicies TenantPolicy[] // change to one-to-many
+  contacts       Contact[]
+
+  adminUser     Users?          @relation("TenantAdmin", fields: [default_admin_user_id], references: [user_id])
+  activities    Activity[]
+  AdminAuditLog AdminAuditLog[]
+  Campaign      Campaign[]
+  Email         Email[]
+  EmailTemplate EmailTemplate[]
+  ThreadHistory ThreadHistory[]
+  TrackingLink  TrackingLink[]
+  UsageRecord   UsageRecord[]
+
+  @@index([name])
+  @@index([status])
 }

@@ -1,0 +1,11 @@
+model UsageRecord {
+  id                 String   @id @default(uuid())
+  tenant_id          String
+  period             String?
+  email_sent_count   Int?     @default(0)
+  email_opened_count Int?     @default(0)
+  charge_amount      Decimal?
+  generated_at       DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenant_id], references: [id])
+}

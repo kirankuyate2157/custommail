@@ -1,0 +1,13 @@
+model TrackingLink {
+  id           String   @id @default(uuid())
+  tenant_id    String
+  campaign_id  String?
+  original_url String?
+  tracking_url String?
+  clicks_count Int?     @default(0)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  tenant   Tenant         @relation(fields: [tenant_id], references: [id])
+  campaign EmailCampaign? @relation(fields: [campaign_id], references: [id])
+}

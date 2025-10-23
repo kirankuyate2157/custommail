@@ -1,39 +1,43 @@
 model EmailCampaign {
-  id                    String    @id @default(uuid())
-  tenant_id             String
-  created_by            String?
-  campaign_name         String?
-  description           String?
-  template_id           String?
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id             String    @db.Uuid
+  created_by            String?   @db.Uuid
+  campaign_name         String?   @db.VarChar(255)
+  description           String?   @db.Text
+  template_id           String?   @db.Uuid
   template_snapshot     Json?
-  email_subject         String?
-  email_body_html       String?
-  email_body_text       String?
-  contact_list_ids      String[]
+  email_subject         String?   @db.VarChar(512)
+  email_body_html       String?   @db.Text
+  email_body_text       String?   @db.Text
+  contact_list_ids      String[] // store ids as array of uuids or list names
   segment_rules         Json?
   final_recipient_count Int?
-  from_name             String?
-  from_email            String?
-  reply_to_email        String?
-  sending_domain        String?
-  schedule_type         String?
+  from_name             String?   @db.VarChar(200)
+  from_email            String?   @db.VarChar(255)
+  reply_to_email        String?   @db.VarChar(255)
+  sending_domain        String?   @db.VarChar(255)
+  schedule_type         String?   @db.VarChar(50)
   schedule_time         DateTime?
   throttle_rate         Int?
   batch_size            Int?
-  tracking_enabled      Boolean?
-  track_opens           Boolean?
-  track_clicks          Boolean?
-  unsubscribe_link      String?
+  tracking_enabled      Boolean?  @default(true)
+  track_opens           Boolean?  @default(true)
+  track_clicks          Boolean?  @default(true)
+  unsubscribe_link      String?   @db.VarChar(512)
   custom_utm_params     Json?
-  status                String?
-  created_at            DateTime  @default(now())
-  updated_at            DateTime  @updatedAt
+  status                String?   @db.VarChar(50)
+  created_at            DateTime  @default(now()) @db.Timestamp(6)
+  updated_at            DateTime  @updatedAt @db.Timestamp(6)
 
   tenant        Tenant              @relation(fields: [tenant_id], references: [id])
-  createdBy     User?               @relation(fields: [created_by], references: [id])
+  createdBy     Users?              @relation(fields: [created_by], references: [user_id])
   template      EmailTemplate?      @relation(fields: [template_id], references: [id])
   variants      CampaignVariant[]
   recipients    CampaignRecipient[]
   emailMessages EmailMessage[]
   trackingLinks TrackingLink[]
+
+  @@index([tenant_id])
+  @@index([status])
+  @@index([created_at])
 }

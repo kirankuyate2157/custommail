@@ -1,13 +1,16 @@
 model Import {
-  id          String   @id @default(uuid())
-  tenant_id   String
-  uploaded_by String?
-  filename    String?
-  source_type String?
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String   @db.Uuid
+  uploaded_by String?  @db.Uuid
+  filename    String?  @db.VarChar(255)
+  source_type String?  @db.VarChar(100)
   metadata    Json?
-  created_at  DateTime @default(now())
+  created_at  DateTime @default(now()) @db.Timestamp(6)
 
   tenant         Tenant          @relation(fields: [tenant_id], references: [id])
-  uploadedBy     User?           @relation("UploadedBy", fields: [uploaded_by], references: [id])
+  uploadedBy     Users?          @relation("UploadedBy", fields: [uploaded_by], references: [user_id])
   importContacts ImportContact[]
+
+  @@index([tenant_id])
+  @@index([uploaded_by])
 }

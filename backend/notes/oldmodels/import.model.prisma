@@ -1,0 +1,13 @@
+model Import {
+  id          String   @id @default(uuid())
+  tenant_id   String
+  uploaded_by String?
+  filename    String?
+  source_type String?
+  metadata    Json?
+  created_at  DateTime @default(now())
+
+  tenant         Tenant          @relation(fields: [tenant_id], references: [id])
+  uploadedBy     User?           @relation("UploadedBy", fields: [uploaded_by], references: [id])
+  importContacts ImportContact[]
+}

@@ -1,13 +1,17 @@
 model EmailEvent {
-  id                    String    @id @default(uuid())
-  message_id            String
-  campaign_recipient_id String?
-  event_type            String?
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message_id            String    @db.Uuid
+  campaign_recipient_id String?   @db.Uuid
+  event_type            String?   @db.VarChar(100)
   event_time            DateTime?
-  ip_address            String?
-  user_agent            String?
+  ip_address            String?   @db.VarChar(100)
+  user_agent            String?   @db.Text
   metadata              Json?
 
   message           EmailMessage       @relation(fields: [message_id], references: [id])
   campaignRecipient CampaignRecipient? @relation(fields: [campaign_recipient_id], references: [id])
+
+  @@index([message_id])
+  @@index([campaign_recipient_id])
+  @@index([event_type])
 }

@@ -1,11 +1,14 @@
 model ImportContact {
-  id            String  @id @default(uuid())
-  import_id     String
-  contact_id    String
+  id            String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  import_id     String  @db.Uuid
+  contact_id    String  @db.Uuid
   row_index     Int?
-  status        String?
-  error_message String?
+  status        String? @db.VarChar(50)
+  error_message String? @db.Text
 
   import  Import  @relation(fields: [import_id], references: [id])
   contact Contact @relation(fields: [contact_id], references: [id])
+
+  @@index([import_id])
+  @@index([contact_id])
 }

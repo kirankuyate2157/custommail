@@ -1,0 +1,12 @@
+model TemplateVersion {
+  id          String   @id @default(uuid())
+  template_id String
+  version_no  Int?
+  name        String?
+  subject     String?
+  body_html   String?
+  body_text   String?
+  created_at  DateTime @default(now())
+
+  template EmailTemplate @relation(fields: [template_id], references: [id])
+}
