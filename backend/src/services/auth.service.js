@@ -27,9 +27,12 @@ export const authService = {
             const tenant = await authRepository.createTenant(tx, tenant_id, company_name, domain, plan_type);
             const user = await authRepository.createUser(tx, tenant_id, admin.email, admin.full_name, passwordHash);
             await authRepository.updateTenant(tx, tenant_id, { default_admin_user_id: user.user_id })
-            await authRepository.mapUserToTenant(tx, tenant.id, user.user_id);
+            // await authRepository.mapUserToTenant(tx, tenant.id, user.user_id);
             await authRepository.createDefaultPolicy(tx, tenant.id);
-            await authRepository.createDefaultRoles(tx, tenant.id);
+            await authRepository.createDefaultPermissionsIfNotExist(tx);
+
+            await authRepository.createDefaultRolesAndPermissions(tx, tenant.id, user.user_id);
+           
             return { tenant, user };
         });
 
@@ -105,7 +108,7 @@ export const authService = {
         const mapping = await authRepository.getUserTenant(user.user_id);
         const tenant_id = mapping?.tenant_id ?? null;
 
-
+        await authRepository.updateLastLogin(user.user_id);
         // Log successful login with session ID
         await logAttempt({ success: true, reason: "logged_successfully", });
 
@@ -135,7 +138,7 @@ export const authService = {
             if (!user) throw new Error("Invalid refresh token");
             if (payload.token_version !== session.token_version) throw new Error("Token revoked");
 
-            const newAccess = signAccessToken({ user_id: user.user_id, tenant_id: payload.tenant_id, session_id: session.session_id, token_version: session.token_version });
+            const newAccess = signAccessToken({ user_id: user.user_id, tenant_id: payload.tenant_id, session_id: session.id, token_version: session.token_version });
 
             await SessionRepository.logEvent({
                 session_id: payload.session_id,
@@ -176,7 +179,7 @@ export const authService = {
     },
 
     logoutAllDevices: async ({ user_id, currentSessionId, mode, req }) => {
-        
+
         const whereCondition =
             mode === "others"
                 ? { user_id, is_active: true, NOT: { id: currentSessionId } }

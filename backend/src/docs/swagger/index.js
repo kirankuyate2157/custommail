@@ -11,14 +11,14 @@ export const swaggerDocument = {
   },
   servers: [{ url: "http://localhost:5000", description: "Local server" }],
   paths: {
-    // ...userPaths,
+    ...userPaths,
     ...authPaths,
     ...sessionPaths
     // future modules can be merged here
   },
   components: {
     schemas: {
-      // ...userSchemas,
+      ...userSchemas,
       ...authSchemas,
       ...sessionSchemas,
     },

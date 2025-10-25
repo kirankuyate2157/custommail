@@ -5,12 +5,10 @@ import { v4 as uuidv4 } from "uuid";
 import { id } from "zod/locales";
 
 export const authRepository = {
-    findUserByEmail: async (email) =>
-        await prisma.users.findUnique({ where: { email } }),
-    findUserById: async (id) =>
-        await prisma.users.findUnique({ where: { user_id: id } }),
-    findTenantByDomain: async (domain) =>
-        await prisma.tenant.findUnique({ where: { domain } }),
+    updateLastLogin: async (user_id) => await prisma.users.update({ where: { user_id }, data: { last_login_at: new Date() }, }),
+    findUserByEmail: async (email) => await prisma.users.findUnique({ where: { email } }),
+    findUserById: async (id) => await prisma.users.findUnique({ where: { user_id: id } }),
+    findTenantByDomain: async (domain) => await prisma.tenant.findUnique({ where: { domain } }),
     createTenant: async (tx, id, name, domain, plan_type) =>
         await tx.tenant.create({
             data: {
@@ -21,11 +19,7 @@ export const authRepository = {
                 status: "active",
             },
         }),
-    updateTenant: async (tx, tenant_id, data) =>
-        await tx.tenant.update({
-            where: { id: tenant_id },
-            data,
-        }),
+    updateTenant: async (tx, tenant_id, data) => await tx.tenant.update({ where: { id: tenant_id }, data, }),
     createUser: async (tx, tenant_id, email, full_name, password_hash) =>
         await tx.users.create({
             data: {
@@ -38,40 +32,107 @@ export const authRepository = {
             },
         }),
 
-    mapUserToTenant: (tx, tenant_id, user_id) =>
-        tx.userOrgMap.create({
+
+    mapUserToTenant: async (tx, tenant_id, user_id, role_id) => {
+        return tx.userOrgMap.create({
             data: {
                 id: uuidv4(),
+                user: { connect: { user_id } },
+                tenant: { connect: { id: tenant_id } },
+                role: { connect: { id: role_id } }, // ✅ required now
                 role_in_org: "owner",
-                user: {
-                    connect: { user_id: user_id },
-                },
-                tenant: {
-                    connect: { id: tenant_id },
-                },
             },
-        }),
+        });
+    },
 
     createDefaultPolicy: (tx, tenant_id) =>
         tx.tenantPolicy.create({
             data: { tenant_id, storage_limit_mb: 1024, allow_auto_sync: false },
         }),
 
-    createDefaultRoles: async (tx, tenant_id) => {
-        const role = await tx.role.create({
-            data: {
+    createDefaultRolesAndPermissions: async (tx, tenant_id, user_id) => {
+        // Define default roles
+        const defaultRoles = [
+            { name: "admin", description: "Tenant admin with full access" },
+            { name: "employee", description: "Regular employee role" },
+        ];
+
+        for (const roleData of defaultRoles) {
+            const role = await tx.role.create({
+                data: {
+                    id: uuidv4(),
+                    tenant_id,
+                    name: roleData.name,
+                    description: roleData.description,
+                },
+            });
+
+            // Fetch permission IDs from PermissionMaster
+            let permissionKeys = [];
+            if (roleData.name === "admin") {
+                permissionKeys = [
+                    "user:create",
+                    "user:update",
+                    "user:delete",
+                    "role:create",
+                    "role:update",
+                    "role:delete",
+                    "policy:manage"
+                ];
+            } else if (roleData.name === "employee") {
+                permissionKeys = ["user:view", "task:update"];
+            }
+
+            const permissions = await tx.permissionMaster.findMany({
+                where: { permission_key: { in: permissionKeys } },
+            });
+
+            const rolePerms = permissions.map(p => ({
                 id: uuidv4(),
-                tenant_id,
-                name: "admin",
-                description: "Tenant admin",
-            },
-        });
-        await tx.rolePermission.createMany({
-            data: [
-                { id: uuidv4(), role_id: role.id, permission_key: "user:create" },
-                { id: uuidv4(), role_id: role.id, permission_key: "user:update" },
-            ],
-        });
+                role_id: role.id,
+                permission_id: p.id,
+            }));
+
+            await tx.rolePermission.createMany({ data: rolePerms });
+
+            // Map admin user to the role automatically
+            if (roleData.name === "admin" && user_id) {
+                await tx.userOrgMap.create({
+                    data: {
+                        id: uuidv4(),
+                        user_id,
+                        role_id: role.id,
+                        tenant_id,
+                    },
+                });
+            }
+        }
+    },
+
+    createDefaultPermissionsIfNotExist: async (tx) => {
+        const defaultPermissions = [
+            { permission_key: "user:create", description: "Create users" },
+            { permission_key: "user:update", description: "Update users" },
+            { permission_key: "user:delete", description: "Delete users" },
+            { permission_key: "user:view", description: "View users" },
+            { permission_key: "role:create", description: "Create roles" },
+            { permission_key: "role:update", description: "Update roles" },
+            { permission_key: "role:delete", description: "Delete roles" },
+            { permission_key: "policy:manage", description: "Manage tenant policies" },
+            { permission_key: "task:update", description: "Update tasks" },
+        ];
+
+        for (const perm of defaultPermissions) {
+            await tx.permissionMaster.upsert({
+                where: { permission_key: perm.permission_key },
+                update: {}, // nothing to update, just keep it if exists
+                create: {
+                    id: uuidv4(),
+                    permission_key: perm.permission_key,
+                    description: perm.description || null,
+                },
+            });
+        }
     },
 
     getUserTenant: (user_id) =>

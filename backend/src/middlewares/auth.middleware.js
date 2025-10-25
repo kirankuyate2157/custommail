@@ -45,6 +45,7 @@ export async function authenticate(req, res, next) {
     }
 
     const decoded = verifyAccessToken(token);
+    console.log("decoded aacess token ::",decoded)
     if (!decoded?.user_id || !decoded?.tenant_id) {
       return res.status(401).json({
         status: "error",
@@ -55,6 +56,7 @@ export async function authenticate(req, res, next) {
     }
     if (decoded?.session_id) {
       let session = await SessionRepository.findById(decoded.session_id);
+      req.session = session;
       if (!session || session?.user_id !== decoded?.user_id || session?.tenant_id !== decoded?.tenant_id || session?.expires_at < new Date() || !session.is_active) {
 
         clearAuthCookies(res);

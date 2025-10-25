@@ -1,3 +1,5 @@
+import prisma from "../config/db.js";
+
 /**
  * 🔒 Permission-based access middleware
  * ----------------------------------------------------------------------------
@@ -21,7 +23,7 @@
  *
  * @example
  * // Tenant admin route
- * router.get("/tenant/:tenantId/users", permit("🔵admin:user:read"), getUsers);
+ * router.get("/tenant/:tenant_id/users", permit("🔵admin:user:read"), getUsers);
  *
  * @example
  * // Normal user route
@@ -29,13 +31,13 @@
  *
  * @example
  * // Superadmin route
- * router.delete("/tenant/:tenantId", permit("🔴superadmin:tenant:manage"), deleteTenant);
+ * router.delete("/tenant/:tenant_id", permit("🔴superadmin:tenant:manage"), deleteTenant);
  *
  * @throws {Error} If permissionKey is missing
  *
  * Behavior:
  *   1. Validates authentication (req.user or req.auth)
- *   2. Resolves tenantId (from params or auth)
+ *   2. Resolves tenant_id (from params or auth)
  *   3. Superadmin bypass if allowed
  *   4. Loads userOrgMap for tenant
  *   5. Aggregates permissions from role + parent_role
@@ -50,18 +52,18 @@ export function permit(permissionKey, options = {}) {
 
   return async (req, res, next) => {
     try {
-      const authUser = req.user || (req.auth && { id: req.auth.userId, tenantId: req.auth.tenantId, role: req.auth.role });
+      const authUser = req.user || (req.auth && { user_id: req.auth.user_id, tenant_id: req.auth.tenant_id, role: req.auth.role });
       if (!authUser) return res.status(401).json({ status: "error", errors: [{ code: "unauthorized", message: "Missing authentication" }] });
 
-      const tenantId = req.params.tenantId || authUser.tenantId;
-      if (!tenantId && !allowSuperAdmin) return res.status(400).json({ status: "error", errors: [{ code: "missing_tenant", message: "Tenant ID required" }] });
+      const tenant_id = req.params.tenant_id || authUser.tenant_id;
+      if (!tenant_id && !allowSuperAdmin) return res.status(400).json({ status: "error", errors: [{ code: "missing_tenant", message: "Tenant ID required" }] });
 
       // -------------------- Superadmin bypass --------------------
       if (allowSuperAdmin && authUser.role === "superadmin") return next();
 
       // -------------------- Tenant-specific check ----------------
       const userMap = await prisma.userOrgMap.findFirst({
-        where: { user_id: authUser.id, tenant_id: tenantId },
+        where: { user_id: authUser.user_id, tenant_id: tenant_id },
         include: {
           role: { include: { permissions: true, parent_role: { include: { permissions: true } } } }
         }

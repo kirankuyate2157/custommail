@@ -8,6 +8,7 @@
     "dev": "nodemon src/server.js",
     "merge-prisma": "node prisma/merge-models.js",
     "split-prisma": "node prisma/split-models.js",
+    "seed:roles-permissions": "node src/seeds/seedRolesPermissions.js",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate"
   },
@@ -16,7 +17,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@prisma/client": "^6.17.1",
+    "@prisma/client": "^6.18.0",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

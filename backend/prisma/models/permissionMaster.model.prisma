@@ -1,0 +1,7 @@
+model PermissionMaster {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  permission_key String   @unique
+  description    String?
+  created_at     DateTime @default(now()) @db.Timestamp(6)
+  roles          RolePermission[]
+}

@@ -105,7 +105,6 @@ export function verifyAccessToken(token) {
  */
 export function verifyRefreshToken(token) {
     if (!token) throw new Error("Refresh token is required.");
-    console.log("Refresh token :: ", token);
     return jwt.verify(token, REFRESH_SECRET);
 }
 
