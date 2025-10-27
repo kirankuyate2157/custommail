@@ -1,4 +1,5 @@
-import { prisma } from "../prisma/index.js";
+import prisma from "../config/db.js";
+
 
 export const createRole = async ({ tenantId, name, description }) => {
   return prisma.role.create({ data: { tenant_id: tenantId, name, description }});

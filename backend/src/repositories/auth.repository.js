@@ -1,8 +1,7 @@
 // src/repositories/auth.repository.js
-import { log } from "console";
+
 import prisma from "../config/db.js";
 import { v4 as uuidv4 } from "uuid";
-import { id } from "zod/locales";
 
 export const authRepository = {
     updateLastLogin: async (user_id) => await prisma.users.update({ where: { user_id }, data: { last_login_at: new Date() }, }),
@@ -57,6 +56,7 @@ export const authRepository = {
             { name: "employee", description: "Regular employee role" },
         ];
 
+        console.log("ii :",tenant_id, defaultRoles)
         for (const roleData of defaultRoles) {
             const role = await tx.role.create({
                 data: {

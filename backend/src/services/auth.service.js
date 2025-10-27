@@ -8,6 +8,7 @@ import log from "../config/logger.js";
 import { emailService } from "./email.service.js";
 import { writeAudit } from "../middlewares/auditLogger.middleware.js";
 import { SessionRepository } from "../repositories/session.repository.js";
+import { seedDefaultRoles } from "../seeds/seedRolesPermissions.js";
 
 export const authService = {
     async registerTenant(data, req) {
@@ -30,7 +31,7 @@ export const authService = {
             // await authRepository.mapUserToTenant(tx, tenant.id, user.user_id);
             await authRepository.createDefaultPolicy(tx, tenant.id);
             await authRepository.createDefaultPermissionsIfNotExist(tx);
-
+            await seedDefaultRoles(tenant.id, tx);  
             await authRepository.createDefaultRolesAndPermissions(tx, tenant.id, user.user_id);
            
             return { tenant, user };

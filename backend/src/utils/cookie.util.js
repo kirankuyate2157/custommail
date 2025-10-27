@@ -1,6 +1,6 @@
 // src/utils/cookie.util.js
 export const setAuthCookies = (res, accessToken, refreshToken, options = {}) => {
-    const { accessMaxAge = 15 * 60, refreshMaxAge = 7 * 24 * 60 * 60 } = options; // seconds
+    const { accessMaxAge = 15 * 60, refreshMaxAge = 7 * 24 * 60 * 60 } = options; // seconds 15 mins and 7 days
     // HttpOnly, Secure (if HTTPS), SameSite
     res.cookie("access_token", accessToken, {
         httpOnly: true,

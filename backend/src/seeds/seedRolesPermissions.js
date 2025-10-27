@@ -10,8 +10,8 @@ const PERMISSIONS = {
   profile: ["profile:update", "password:change"]
 };
 
-async function seedDefaultRoles(tenant_id = null) {
-  await prisma.$transaction(async (tx) => {
+export async function seedDefaultRoles(tenant_id = null,tx=prisma) {
+
     // Step 1: Create all permissions
     const allPermissions = Array.from(new Set(Object.values(PERMISSIONS).flat()));
     const permissionMap = {};
@@ -39,16 +39,16 @@ async function seedDefaultRoles(tenant_id = null) {
 
       if (r.tenant_id) {
         // Tenant-specific role: safe to use composite unique
-        role = await prisma.role.upsert({
+        role = await tx.role.upsert({
           where: { name_tenant_unique: { tenant_id: r.tenant_id, name: r.name } },
           update: {},
           create: { tenant_id: r.tenant_id, name: r.name, description: r.name },
         });
       } else {
         // Global role: tenant_id is null → cannot use composite unique
-        role = await prisma.role.findFirst({ where: { name: r.name } });
+        role = await tx.role.findFirst({ where: { name: r.name } });
         if (!role) {
-          role = await prisma.role.create({
+          role = await tx.role.create({
             data: { tenant_id: null, name: r.name, description: r.name },
           });
         }
@@ -82,11 +82,11 @@ async function seedDefaultRoles(tenant_id = null) {
         skipDuplicates: true
       });
     }
-  });
+  
 
   console.log("Default roles and permissions seeded!");
 }
 
-seedDefaultRoles("6da8f0ab-7aa1-40a5-a6e2-65c7d9280c43")
-  .catch(console.error)
-  .finally(() => prisma.$disconnect());
+// seedDefaultRoles("6da8f0ab-7aa1-40a5-a6e2-65c7d9280c43")
+//   .catch(console.error)
+//   .finally(() => prisma.$disconnect());
